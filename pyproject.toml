@@ -12,6 +12,7 @@ pytest = "^8.2.1"
 sqlalchemy = "^2.0.30"
 flake8 = "^7.0.0"
 pylint = "^3.2.2"
+psycopg2 = "^2.9.9"
 
 
 

@@ -1,11 +1,8 @@
-import fastapi
+from fastapi import FastAPI
 
 
-
-
-
-app = fastapi.FastAPI()
-
-@app.get("/")
-def read_root():    
-    return {"Hello": "World"}
+app = FastAPI(
+    title="TEST API",
+    docs_url="/docs",
+    version="0.0.1",
+)

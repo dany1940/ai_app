@@ -4,13 +4,14 @@ version = "0.1.0"
 description = ""
 authors = ["dany1940 <59851426+dany1940@users.noreply.github.com>"]
 readme = "README.md"
-packages = [{include = "ai_app"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
 fastapi = "^0.111.0"
 pytest = "^8.2.1"
 sqlalchemy = "^2.0.30"
+
+
 
 
 [build-system]

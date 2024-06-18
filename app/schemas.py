@@ -67,60 +67,7 @@ class MedicationRequest(BaseModel):
 
 
 
-class UserBase(SQLModel):
-    email: EmailStr = Field(unique=True, index=True)
-    is_active: bool = True
-    is_superuser: bool = False
-    full_name: str | None = None
 
-
-
-class User(UserBase, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    hashed_password: str
-    is_active: bool
-    items: list["Item"] = Relationship(back_populates="owner")
-
-
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-
-class TokenPayload(SQLModel):
-    sub: int | None = None
-
-class NewPassword(BaseModel):
-    new_password: str
-    token: str
-
-class UserCreate(UserBase):
-    password: str
-
-
-class UserRegister(BaseModel):
-    email: EmailStr
-    password: str
-    full_name: str | None = None
-
-class UserUpdate(UserBase):
-    email: EmailStr
-    full_name: str | None = None
-
-class UserUpdateMe(BaseModel):
-    email: EmailStr | None = None
-    full_name: str | None = None
-
-class UpdatePassword(BaseModel):
-    current_password: str
-    new_password: str
-
-
-class UserPublic(UserBase):
-    id: int
-class UserPublic(BaseModel):
-    data: list[UserPublic]
 
 
 

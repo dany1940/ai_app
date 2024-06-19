@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy.typing import Date
+from sqlalchemy.sql.sqltypes import Date
 from sqlalchemy.schema import Column
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 from sqlalchemy.sql.sqltypes import TEXT
@@ -10,12 +10,13 @@ from sqlalchemy.sql.sqltypes import String
 from sqlalchemy.sql.sqltypes import DateTime
 from sqlalchemy.sql.sqltypes import Enum
 from sqlalchemy.sql.schema import ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
 from app.dependencies import Base
-from typing import date
-from commons import StatusType, FormType, GenderType
+from datetime import date
+from .commons import StatusType, FormType, GenderType
 
 
-
+Base = declarative_base()
 
 class Patient(Base):
     __tablename__ = "patient"
@@ -43,6 +44,7 @@ class Clinician(Base):
     registration_id: int = Column(Integer, primary_key=True, autoincrement=True)
     first_name: str = Column(String, nullable=False)
     last_name: str = Column(String, nullable=False)
+
 
 
 class Medication(Base):
@@ -87,7 +89,7 @@ class MedicationRequest(Base):
             native_enum=True,
         ),
         nullable=False,
-        default=StatusType.MALE.value,
-        server_default=StatusType.MALE.value,
+        default=StatusType.ACTIVE.value,
+        server_default=StatusType.ACTIVE.value,
     )
 

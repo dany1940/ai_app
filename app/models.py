@@ -1,5 +1,6 @@
-from sqlalchemy.orm import relationship
-from sqlalchemy.typing import Date, D
+from datetime import datetime
+from sqlalchemy.typing import Date
+from sqlalchemy.schema import Column
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 from sqlalchemy.sql.sqltypes import TEXT
 from sqlalchemy.sql.sqltypes import Date
@@ -7,9 +8,11 @@ from sqlalchemy.sql.sqltypes import Integer
 from sqlalchemy.sql.sqltypes import SmallInteger
 from sqlalchemy.sql.sqltypes import String
 from sqlalchemy.sql.sqltypes import DateTime
-from database import Base
+from sqlalchemy.sql.sqltypes import Enum
+from sqlalchemy.sql.schema import ForeignKey
+from app.dependencies import Base
 from typing import date
-
+from commons import StatusType, FormType, GenderType
 
 
 
@@ -21,7 +24,18 @@ class Patient(Base):
     first_name: str = Column(String, nullable=False)
     last_name: str = Column(String, nullable=False)
     date_of_birth = Column(Date, nullable=False)
-    gender : str = Column(String, nullable=False)
+    gender : str = Column(
+        Enum(
+            GenderType,
+            name="gender",
+            validate_strings=True,
+            native_enum=True,
+        ),
+        nullable=False,
+        default=GenderType.FEMALE.value,
+        server_default=GenderType.FEMALE.value,
+    )
+
 
 class Clinician(Base):
     __tablename__ = "clinician"
@@ -38,22 +52,42 @@ class Medication(Base):
     code_iso_name: str | None = Column(String, nullable=True)
     strength_value: int | None = Column(SmallInteger, nullable=True)
     strenght_unit: float | None = Column(DOUBLE_PRECISION, nullable=True)
-    form: str = Column(String, nullable=False)
+    form: str = Column(
+        Enum(
+            FormType,
+            name="form",
+            validate_strings=True,
+            native_enum=True,
+        ),
+        nullable=False,
+        default=FormType.TABLET.value,
+        server_default=FormType.TABLET.value,
+    )
+
 
 
 
 
 class MedicationRequest(Base):
     __tablename__ = "medication_request"
+    medication_request_id: str = Column(String,  primary_key=True)
     clinician_reg_id: int = Column(Integer, ForeignKey("clinician.registration_id"))
     patient_id: int = Column(Integer, ForeignKey("patient.patient_id"))
     medication_code_id: str  = Column(String, ForeignKey("medication.code_id"))
     reason_of_prescription: date | None = Column(TEXT, nullable=True)
     prescription_date: datetime = Column(DateTime, nullable=False)
     start_date: datetime = Column(DateTime, nullable=False)
-    end_date: datime | None  = Column(DateTime, nullable=True)
+    end_date: datetime | None  = Column(DateTime, nullable=True)
     frequency: int = Column(SmallInteger, nullable=False)
-    status: str  = Column(String, nullable=False)
-
-
+    status: str = Column(
+        Enum(
+            StatusType,
+            name="status",
+            validate_strings=True,
+            native_enum=True,
+        ),
+        nullable=False,
+        default=StatusType.MALE.value,
+        server_default=StatusType.MALE.value,
+    )
 

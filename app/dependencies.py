@@ -10,6 +10,7 @@ from fastapi import Depends
 
 
 
+
 load_dotenv()
 
 
@@ -30,4 +31,11 @@ def get_db():
     finally:
         db.close()
 
-db_dependency = Annotated[SessionLocal, Depends(get_db)]
+
+
+Database = Annotated[SessionLocal, Depends(get_db)]
+
+
+
+
+

@@ -1,27 +1,9 @@
-from sqlmodel import Field, Relationship, SQLModel, EmailStr
-from pydantic import (Date, ConfigDict, BaseModel, PositiveInt, Optional)
+from sqlmodel import Field
+from pydantic import (ConfigDict, BaseModel, PositiveInt, Optional, validator)
 from typing import Literal
 from typing_extensions import Annotated
-
-
-
-
-class GenderType(Enum):
-    MALE = "Male"
-    FEMALE = "Female"
-
-
-class FormType(Enum):
-    POWDER: "Powder"
-    TABLET: "Tablet"
-    CAPSULE: "Capsule"
-    SYRUP: "Syrup"
-
-class StatusType(Enum):
-    ACTIVE: "Active"
-    ON-HOLD: "On-Hold"
-    CANCELLED: "Cancelled"
-    COMPLETED: "Completed"
+from commons import GenderType, StatusType, FormType
+from datetime import datetime
 
 class Person(BaseModel):
     registration_id: int
@@ -31,9 +13,9 @@ class Person(BaseModel):
 class Patient(Person):
    __pydantic_config__ = ConfigDict(use_enum_values=True, extra="forbid")
    date_of_birth: datetime
-   sex: SexType = Literal[GenderType.MAN]
+   gender: Literal[GenderType.MAN]
    @validator("date_of_birth")
-    def is_date_in_range(cls, is_valid):
+   def is_date_in_range(cls, is_valid):
         if not datetime(year=1900, month=1, day=1) <= is_valid < datetime(year=2024, month=1, day=1):
             raise ValueError("Birth date must be in range")
         return is_valid
@@ -46,15 +28,16 @@ class Clinician(Person):
 class Medication(BaseModel):
     __pydantic_config__ = ConfigDict(use_enum_values=True, extra="forbid")
 
-    code: Annotated[str, title ="Medications Code" ,Field(min_length=2, max_length=25, pattern=r"/[0-9]+/g")]
-    code_name: Annotated[str, title="Medication code name", Field(min_length=2, max_length=25, pattern=r"/[a-z]+/g")]
-    international_code_name: Annotated[str, title="Code Name", Field(min_length=2, max_length=25, pattern=r"/[A-Z]+/g")]
+    code: Annotated[str, Field(min_length=2, max_length=25, pattern=r"/[0-9]+/g"), "Medications Code"]
+    code_name: Annotated[str, Field(min_length=2, max_length=25, pattern=r"/[a-z]+/g"), "Medications Code" ]
+    international_code_name: Annotated[str, Field(min_length=2, max_length=25, pattern=r"/[A-Z]+/g"), "Code Name"]
     strenght_value: PositiveInt
     strenght_unit: PositiveInt
-    form: Form = Literal(Form.POWDER)
+    form: FormType = Literal(FormType.POWDER)
 
 
 class MedicationRequest(BaseModel):
+  meddication_request_id: int
   patient_refrence: int
   clinician_refrence: int
   medication_refrence: str
@@ -64,7 +47,6 @@ class MedicationRequest(BaseModel):
   end_date: Optional[datetime] = None
   frequency: int
   status: Literal[StatusType.ACTIVE]
-
 
 
 

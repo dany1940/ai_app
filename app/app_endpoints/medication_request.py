@@ -4,16 +4,16 @@ from fastapi import APIRouter
 from fastapi import HTTPException
 from fastapi import Query
 from fastapi import status
-from commons import StatusType
+from app.commons import StatusType
 from datetime import datetime
 from datetime import timedelta
-from dependencies import Database
+from app.dependencies import Database
 from sqlalchemy.sql import and_
 from sqlalchemy.sql import select
 
 
 
-router = APIRouter(prefix="/medication_request")
+router = APIRouter(prefix="/medication_request", tags=["medication_request"], responses={404:{"description": "Not Found"}})
 
 
 

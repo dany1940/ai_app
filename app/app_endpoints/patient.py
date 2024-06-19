@@ -1,14 +1,14 @@
 from fastapi import APIRouter
 from fastapi import HTTPException
 from fastapi import status
-from dependencies import Database
-import schemas
+from app.dependencies import Database
+import app.schemas
 
-router = APIRouter(prefix="/medication_request")
+router = APIRouter(prefix="/patient", tags=["patient"], responses={404:{"description": "Not Found"}})
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=None)
 def post_patient(
-    patient: schemas.PatientCreate,
+    patient: app.schemas.PatientCreate,
     database: Database,
 ) -> None:
     """

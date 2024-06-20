@@ -1,19 +1,23 @@
-from enum import Enum
+import  enum
 
 
-class GenderType(str, Enum):
-    MALE = "Male"
-    FEMALE = "Female"
+
+class GenderType(enum.Enum):
+    MALE = "MALE"
+    FEMALE = "FEMALE"
 
 
-class FormType(str, Enum):
-    POWDER: str = "Powder"
-    TABLET: str = "Tablet"
-    CAPSULE: str = "Capsule"
-    SYRUP: str = "Syrup"
+    PSI = "PSI"
+    BAR = "BAR"
+    KPA = "KPA"
+class FormType(enum.Enum):
+    POWDER = "POWDER"
+    TABLET = "TABLET"
+    CAPSULE = "CAPSULE"
+    SYRUP = "SYRUP"
 
-class StatusType(str, Enum):
-    ACTIVE: str = "Active"
-    ON_HOLD: str =  "On_Hold"
-    CANCELLED: str = "Cancelled"
-    COMPLETED: str = "Completed"
+class StatusType(enum.Enum):
+    ACTIVE = "ACTIVE"
+    ON_HOLD =  "ON_HOLD"
+    CANCELLED  = "CANCCELED"
+    COMPLETED = "COMPLETED"

@@ -1,20 +1,19 @@
 version: "3"
+
 services:
   db:
-    image: postgres:12
-    restart: always
-    env_file:
-      - .env
+    image: postgres:11
+    ports:
+      - "5432:5432"
     environment:
-      - PGDATA=/var/lib/postgresql/data/pgdata
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
-      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
-      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=test_db
   web:
     build: .
-    command: bash -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    command: bash -c "alembic revision --autogenerate -m "First-revision" && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     volumes:
-      - .:/app
+      - .:/code
     ports:
       - "8000:8000"
     depends_on:

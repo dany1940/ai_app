@@ -13,7 +13,7 @@ class Person(BaseModel):
 class Patient(Person):
    __pydantic_config__ = ConfigDict(use_enum_values=True, extra="forbid")
    date_of_birth: datetime
-   gender: Literal[GenderType.MALE]
+   gender: Literal[GenderType.FEMALE]
    @validator("date_of_birth")
    def is_date_in_range(cls, is_valid):
         if not datetime(year=1900, month=1, day=1) <= is_valid < datetime(year=2024, month=1, day=1):

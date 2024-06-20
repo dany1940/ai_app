@@ -25,18 +25,17 @@ class Patient(Base):
     first_name: str = Column(String, nullable=False)
     last_name: str = Column(String, nullable=False)
     date_of_birth = Column(Date, nullable=False)
-    gender : str = Column(
+    gender: GenderType = Column(
         Enum(
             GenderType,
-            name="gender",
+            name="GenderType",
             validate_strings=True,
             native_enum=True,
         ),
         nullable=False,
-        default=GenderType.FEMALE.value,
         server_default=GenderType.FEMALE.value,
+        default=GenderType.FEMALE.value,
     )
-
 
 class Clinician(Base):
     __tablename__ = "clinician"
@@ -57,13 +56,12 @@ class Medication(Base):
     form: str = Column(
         Enum(
             FormType,
-            name="form",
             validate_strings=True,
             native_enum=True,
         ),
         nullable=False,
-        default=FormType.TABLET.value,
-        server_default=FormType.TABLET.value,
+        default=FormType.CAPSULE.value,
+        server_default=FormType.CAPSULE.value,
     )
 
 

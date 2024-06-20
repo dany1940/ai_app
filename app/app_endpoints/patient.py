@@ -3,6 +3,8 @@ from fastapi import HTTPException
 from fastapi import status
 from app.dependencies import Database
 import app.schemas
+from app.crud.patient import patient as crud_patient
+from app import models
 
 router = APIRouter(prefix="/patient", tags=["patient"], responses={404:{"description": "Not Found"}})
 
@@ -15,12 +17,16 @@ def post_patient(
     Create a new Patient in DB
     """
 
-    patient = []
-    if patient:
+    existing_patient = crud_patient.get(database, patient.first_name, patient.last_name, patient.date_of_birth)
+
+    if existing_patient:
         raise HTTPException(
-            409, detail="There is aalready a patient with this credentials"
+            409, detail="There is already a patient with this credentials"
         )
 
+    new_patient = models.Patient(
+        **patient.model_dump(),
 
-
-
+    )
+    database.add(new_patient)
+    database.commit()

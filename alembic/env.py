@@ -46,6 +46,8 @@ def run_migrations_offline() -> None:
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
+        compare_type=True,
+        include_schemas=True,
         dialect_opts={"paramstyle": "named"},
     )
 

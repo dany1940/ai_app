@@ -8,7 +8,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=test_db
+      - POSTGRES_DB=postgres
   web:
     build: .
     command: bash -c "alembic revision --autogenerate -m "First-revision" && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
@@ -18,7 +18,6 @@ services:
       - "8000:8000"
     depends_on:
       - db
-
   pgadmin:
     container_name: pgadmin
     image: dpage/pgadmin4

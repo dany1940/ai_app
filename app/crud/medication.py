@@ -25,7 +25,7 @@ class Medication:
             database.execute(
                 select(models.Medication)
                 .where(
-                    or_(models.Medication.code == code,
+                    or_(models.Medication.medication_reference == code,
                          models.Medication.code_name == code_name,
              )
             )

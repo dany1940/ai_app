@@ -15,7 +15,7 @@ def post_clinician(
     database: Database,
 ) -> None:
     """
-    Create a new Patient in DB
+    Create a new Clinician in DB
     """
 
     existing_patient = crud_clinician.get(database, clinician.first_name, clinician.last_name, clinician.registration_id)

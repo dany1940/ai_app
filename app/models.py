@@ -48,7 +48,7 @@ class Clinician(Base):
 
 class Medication(Base):
     __tablename__ = "medication_tab"
-    code: str = Column(String,  primary_key=True)
+    medication_reference: str = Column(String,  primary_key=True)
     code_name: str = Column(String, nullable=False)
     international_code_name: str | None = Column(String, nullable=True)
     strength_value: int | None = Column(SmallInteger, nullable=True)
@@ -73,7 +73,7 @@ class MedicationRequest(Base):
     medication_request_id: str = Column(String,  primary_key=True)
     clinician_refrence: int = Column(Integer, ForeignKey("clinician_tab.registration_id"))
     patient_refrence: int = Column(Integer, ForeignKey("patient_tab.registration_id"))
-    medication_reference: str  = Column(String, ForeignKey("medication_tab.code"))
+    medication_reference: str  = Column(String, ForeignKey("medication_tab.medication_reference"))
     reason: date | None = Column(TEXT, nullable=True)
     prescription_date: datetime = Column(DateTime, nullable=False)
     start_date: datetime = Column(DateTime, nullable=False)

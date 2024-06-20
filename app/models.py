@@ -19,9 +19,9 @@ from .commons import StatusType, FormType, GenderType
 Base = declarative_base()
 
 class Patient(Base):
-    __tablename__ = "patient"
+    __tablename__ = "patient_tab"
 
-    patient_id: int = Column(Integer, primary_key=True, autoincrement=True)
+    registration_id: int = Column(Integer, primary_key=True, autoincrement=True)
     first_name: str = Column(String, nullable=False)
     last_name: str = Column(String, nullable=False)
     date_of_birth = Column(Date, nullable=False)
@@ -38,7 +38,7 @@ class Patient(Base):
     )
 
 class Clinician(Base):
-    __tablename__ = "clinician"
+    __tablename__ = "clinician_tab"
 
     registration_id: int = Column(Integer, primary_key=True, autoincrement=True)
     first_name: str = Column(String, nullable=False)
@@ -47,10 +47,10 @@ class Clinician(Base):
 
 
 class Medication(Base):
-    __tablename__ = "medication"
-    code_id: str = Column(String,  primary_key=True)
+    __tablename__ = "medication_tab"
+    code: str = Column(String,  primary_key=True)
     code_name: str = Column(String, nullable=False)
-    code_iso_name: str | None = Column(String, nullable=True)
+    international_code_name: str | None = Column(String, nullable=True)
     strength_value: int | None = Column(SmallInteger, nullable=True)
     strenght_unit: float | None = Column(DOUBLE_PRECISION, nullable=True)
     form: str = Column(
@@ -69,12 +69,12 @@ class Medication(Base):
 
 
 class MedicationRequest(Base):
-    __tablename__ = "medication_request"
+    __tablename__ = "medication_request_tab"
     medication_request_id: str = Column(String,  primary_key=True)
-    clinician_reg_id: int = Column(Integer, ForeignKey("clinician.registration_id"))
-    patient_id: int = Column(Integer, ForeignKey("patient.patient_id"))
-    medication_code_id: str  = Column(String, ForeignKey("medication.code_id"))
-    reason_of_prescription: date | None = Column(TEXT, nullable=True)
+    clinician_refrence: int = Column(Integer, ForeignKey("clinician_tab.registration_id"))
+    patient_refrence: int = Column(Integer, ForeignKey("patient_tab.registration_id"))
+    medication_reference: str  = Column(String, ForeignKey("medication_tab.code"))
+    reason: date | None = Column(TEXT, nullable=True)
     prescription_date: datetime = Column(DateTime, nullable=False)
     start_date: datetime = Column(DateTime, nullable=False)
     end_date: datetime | None  = Column(DateTime, nullable=True)

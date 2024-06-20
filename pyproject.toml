@@ -16,6 +16,7 @@ uvicorn = "^0.30.1"
 fastapi = "^0.111.0"
 fastapi-health = "^0.4.0"
 python-dotenv = "^1.0.1"
+gunicorn = "^22.0.0"
 
 
 [build-system]

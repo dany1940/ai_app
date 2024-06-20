@@ -1,8 +1,7 @@
 from fastapi import APIRouter
 from fastapi import HTTPException
 from fastapi import status
-from app.dependencies import Database
-from app.crud.medication import medication as crud_medication
+from app.dependencies import Database, Medication
 import app.schemas
 from app import models
 
@@ -16,11 +15,11 @@ router = APIRouter(prefix="/medication", tags=["medication"], responses={404:{"d
 def post_medication(
     medication: app.schemas.MedicationCreate,
     database: Database,
+    existing_medication: Medication
 ) -> None:
     """
     Create a new Medication
     """
-    existing_medication = crud_medication.get(database, medication.medication_reference, medication.code_name)
 
     if existing_medication:
         raise HTTPException(

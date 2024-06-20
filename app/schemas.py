@@ -35,7 +35,7 @@ class PatientCreate(Patient):
 class Medication(BaseModel):
     __pydantic_config__ = ConfigDict(use_enum_values=True, extra="forbid")
 
-    code: Annotated[str, Field(min_length=2, max_length=25, pattern=r"[0-9]"), "Medications Code"]
+    medication_reference: Annotated[str, Field(min_length=2, max_length=25, pattern=r"[0-9]"), "Medications Code"]
     code_name: Annotated[str, Field(min_length=2, max_length=25, pattern=r"[a-z]"), "Medications Code" ]
     international_code_name: Annotated[str, Field(min_length=2, max_length=25, pattern=r"[A-Z]"), "Code Name"]
     strength_value: PositiveInt
@@ -47,17 +47,22 @@ class MedicationCreate(Medication):
     pass
 
 
-class MedicationRequest(BaseModel):
-  meddication_request_id: int
-  patient_refrence: int
-  clinician_refrence: int
-  medication_refrence: str
+class MedicationRequestBase(BaseModel):
+  medication_request_id: int
+  medication_reference: str
   reason:  str
-  prescribed_date: datetime
+  prescription_date: datetime
   start_date:  datetime
   end_date: Optional[datetime] = None
   frequency: int
   status: StatusType = Literal[StatusType.ACTIVE.value]
+
+class MedicationRequest(MedicationRequestBase):
+  patient_refrence: int
+  clinician_refrence: int
+
+class MedicationRequestCreate(MedicationRequestBase):
+    pass
 
 
 

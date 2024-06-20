@@ -1,8 +1,8 @@
 """First-revision
 
-Revision ID: 7e1b1eb25159
+Revision ID: 32112d44e4c2
 Revises: 
-Create Date: 2024-06-20 15:05:00.894993
+Create Date: 2024-06-20 17:38:56.812548
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '7e1b1eb25159'
+revision: str = '32112d44e4c2'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,13 +27,13 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('registration_id')
     )
     op.create_table('medication_tab',
-    sa.Column('code', sa.String(), nullable=False),
+    sa.Column('medication_reference', sa.String(), nullable=False),
     sa.Column('code_name', sa.String(), nullable=False),
     sa.Column('international_code_name', sa.String(), nullable=True),
     sa.Column('strength_value', sa.SmallInteger(), nullable=True),
     sa.Column('strenght_unit', sa.DOUBLE_PRECISION(), nullable=True),
     sa.Column('form', sa.Enum('POWDER', 'TABLET', 'CAPSULE', 'SYRUP', name='formtype'), server_default='CAPSULE', nullable=False),
-    sa.PrimaryKeyConstraint('code')
+    sa.PrimaryKeyConstraint('medication_reference')
     )
     op.create_table('patient_tab',
     sa.Column('registration_id', sa.Integer(), autoincrement=True, nullable=False),
@@ -55,7 +55,7 @@ def upgrade() -> None:
     sa.Column('frequency', sa.SmallInteger(), nullable=False),
     sa.Column('status', sa.Enum('ACTIVE', 'ON_HOLD', 'CANCELLED', 'COMPLETED', name='status'), server_default='ACTIVE', nullable=False),
     sa.ForeignKeyConstraint(['clinician_refrence'], ['clinician_tab.registration_id'], ),
-    sa.ForeignKeyConstraint(['medication_reference'], ['medication_tab.code'], ),
+    sa.ForeignKeyConstraint(['medication_reference'], ['medication_tab.medication_reference'], ),
     sa.ForeignKeyConstraint(['patient_refrence'], ['patient_tab.registration_id'], ),
     sa.PrimaryKeyConstraint('medication_request_id')
     )

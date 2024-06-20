@@ -20,7 +20,7 @@ def post_medication(
     """
     Create a new Medication
     """
-    existing_medication = crud_medication.get(database, medication.code, medication.code_name)
+    existing_medication = crud_medication.get(database, medication.medication_reference, medication.code_name)
 
     if existing_medication:
         raise HTTPException(

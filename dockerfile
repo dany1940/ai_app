@@ -5,7 +5,7 @@ FROM python:3.12
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-WORKDIR /app/
+WORKDIR /code
 
 ADD pyproject.toml .
 
@@ -19,6 +19,5 @@ RUN poetry config virtualenvs.create false
 RUN poetry install --no-dev
 
 
-COPY . /app/
-
+COPY . .
 EXPOSE 8000

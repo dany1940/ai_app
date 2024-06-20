@@ -11,7 +11,7 @@ from sqlalchemy.sql.sqltypes import DateTime
 from sqlalchemy.sql.sqltypes import Enum
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from app.dependencies import Base
+from app.commons import Base
 from datetime import date
 from .commons import StatusType, FormType, GenderType
 

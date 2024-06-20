@@ -1,5 +1,5 @@
 import  enum
-
+from sqlalchemy.ext.declarative import declarative_base
 
 
 class GenderType(enum.Enum):
@@ -21,3 +21,4 @@ class StatusType(enum.Enum):
     ON_HOLD =  "ON_HOLD"
     CANCELLED  = "CANCCELED"
     COMPLETED = "COMPLETED"
+Base = declarative_base()

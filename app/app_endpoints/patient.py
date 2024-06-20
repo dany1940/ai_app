@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 from fastapi import HTTPException
 from fastapi import status
-from app.dependencies import Database
+from app.dependencies import Database, Patient
 import app.schemas
-from app.crud.patient import patient as crud_patient
+
 from app import models
 
 router = APIRouter(prefix="/patient", tags=["patient"], responses={404:{"description": "Not Found"}})
@@ -12,12 +12,12 @@ router = APIRouter(prefix="/patient", tags=["patient"], responses={404:{"descrip
 def post_patient(
     patient: app.schemas.PatientCreate,
     database: Database,
-) -> None:
+    existing_patient: Patient,
+):
     """
     Create a new Patient in DB
     """
 
-    existing_patient = crud_patient.get(database, patient.first_name, patient.last_name, patient.date_of_birth)
 
     if existing_patient:
         raise HTTPException(

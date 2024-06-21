@@ -22,27 +22,27 @@ create a .env file and add <br />
 POSTGRES_HOST=db <br />
 POSTGRES_USER=postgres <br />
 POSTGRES_PORT=5432 <br />
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=postgres
-Run the following commands env:
- docker-compose build
- docker-compose run web alembic upgrade head
- docker-compose up
-if everything succesful you can find the sqagger with the endpoints at:
-http://0.0.0.0:8000/docs#/
-log in PG4Admin at:
-http://localhost:5050/browser/
-create a new server using the above credentials from the env
-You should see the migrations and tables, best to use Mozzila or Chrome
-If you have MacOs you might be forced to disable the firewall
-Download docker interface or use the command line
-you should see in docker the api image, pg4admin and postgresql as well as container
-Use the swagger to test endpoints
-if for some reason you need to restart or rebuild the docker container
-please make sure you delete first the migrations, then,  run:
-docker-compose down
-go in the docker interface and check if any images or conatiners left, if so, just delete all.
-then rerun the commands again from docker build onwards
+POSTGRES_PASSWORD=postgres <br />
+POSTGRES_DB=postgres <br />
+Run the following commands env: <br />
+ docker-compose build <br />
+ docker-compose run web alembic upgrade head <br />
+ docker-compose up <br />
+if everything succesful you can find the sqagger with the endpoints at: <br />
+http://0.0.0.0:8000/docs#/ <br />
+log in PG4Admin at: <br />
+http://localhost:5050/browser/ <br />
+create a new server using the above credentials from the env <br />
+You should see the migrations and tables, best to use Mozzila or Chrome <br />
+If you have MacOs you might be forced to disable the firewall <br />
+Download docker interface or use the command line <br />
+you should see in docker the api image, pg4admin and postgresql as well as container <br />
+Use the swagger to test endpoints <br />
+if for some reason you need to restart or rebuild the docker container <br />
+please make sure you delete first the migrations, then,  run: <br />
+docker-compose down <br />
+go in the docker interface and check if any images or conatiners left, if so, just delete all. <br />
+then rerun the commands again from docker build onwards <br />
 
 
 
@@ -52,18 +52,18 @@ then rerun the commands again from docker build onwards
 
 
 
-## Contact Information
+## Contact Information <br />
 
-For any queries about this project, please contact.
+For any queries about this project, please contact. <br />
 
-- Florin Dumitrascu <gsecomerce@gmail.com>
+- Florin Dumitrascu <gsecomerce@gmail.com> <br />
 
-## Disclaimer
+## Disclaimer <br />
 
 ```
-Copyright (C) Dany1940
-Unauthorized copying of the files contained in this repository, via any medium is strictly prohibited
-Proprietary and confidential
-Written by Dumitrascu Florin, June, 2024
+Copyright (C) Dany1940 <br />
+Unauthorized copying of the files contained in this repository, via any medium is strictly prohibited <br />
+Proprietary and confidential <br />
+Written by Dumitrascu Florin, June, 2024 <br />
 ```
 

@@ -1,5 +1,3 @@
-from fastapi.testclient import TestClient
-import pytest
 from typing import Any
 
 import pytest
@@ -7,57 +5,53 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from alembic.command import downgrade
-from alembic.command import upgrade
+
+from alembic.command import downgrade, upgrade
 from alembic.config import Config
-from app.models import Clinician
 from app.dependencies import get_db
-from tests.conftest import postgres_dsn
-from tests.conftest import create_override
-from  app.main import app
-
-
+from app.main import app
+from app.models import Clinician
+from tests.conftest import create_override, postgres_dsn
 
 resources = [
     Clinician(
-    registration_id=1 ,
-    first_name="ANA",
-    last_name="CARENINA",
+        registration_id=1,
+        first_name="ANA",
+        last_name="CARENINA",
     ),
     Clinician(
-    registration_id=2 ,
-    first_name="ERNEST",
-    last_name="HEMINGWAY",
+        registration_id=2,
+        first_name="ERNEST",
+        last_name="HEMINGWAY",
     ),
     Clinician(
-    registration_id=3 ,
-    first_name="ANA",
-    last_name="CARENINA",
-
+        registration_id=3,
+        first_name="ANA",
+        last_name="CARENINA",
     ),
     Clinician(
-    registration_id=4 ,
-    first_name="STEPHEN",
-    last_name="KING",
-    )
+        registration_id=4,
+        first_name="STEPHEN",
+        last_name="KING",
+    ),
 ]
 
 clinician_to_create = [
     {
-  "registration_id": 5,
-  "first_name": "MARK",
-  "last_name": "TWAIN",
-},
-{
-  "registration_id": 6,
-  "first_name": " CHARLES",
-  "last_name": "DICKENS",
-},
-{
-  "registration_id": 7,
-  "first_name": "JANE",
-  "last_name": "AUSTIN",
-},
+        "registration_id": 5,
+        "first_name": "MARK",
+        "last_name": "TWAIN",
+    },
+    {
+        "registration_id": 6,
+        "first_name": " CHARLES",
+        "last_name": "DICKENS",
+    },
+    {
+        "registration_id": 7,
+        "first_name": "JANE",
+        "last_name": "AUSTIN",
+    },
 ]
 
 
@@ -95,8 +89,6 @@ class Clinican:
         test_client = TestClient(app)
         app.dependency_overrides[get_db] = create_override(alembic_engine)
         return test_client
-
-
 
     @pytest.mark.parametrize("/", clinician_to_create)
     def test_post_patient(self, clinician: dict[Any, Any], client: TestClient) -> None:

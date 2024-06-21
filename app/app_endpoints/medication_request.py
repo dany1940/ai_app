@@ -11,6 +11,7 @@ from app.dependencies import Database, MedicationById, ClinicianById, Medication
 import app.schemas as schemas
 from sqlalchemy.sql import select, and_
 from sqlalchemy.orm import load_only
+from sqlalchemy import update
 
 router = APIRouter(prefix="/medication_request", tags=["medication_request"], responses={404:{"description": "Not Found"}})
 
@@ -149,20 +150,28 @@ async def get_medication_request_for_a_patient(
 
 
 
-@router.patch("/{medication_request_id}", status_code=status.HTTP_200_OK, response_model=None)
+@router.patch("/{medication_request_id}", status_code=status.HTTP_200_OK)
 def modify_medication_request(
     medication_request_update: schemas.MedicationRequestUpdate,
-    existing_medication_request: MedicationRequestById
-) -> None:
+    existing_medication_request: MedicationRequestById,
+    database: Database
+):
     if not existing_medication_request:
         raise HTTPException(
             404, detail="There is no medication request with that id"
         )
 
+    database.execute(
+        update(models.MedicationRequest).values(
+            end_date=medication_request_update.end_date,
+            frequency=medication_request_update.frequency,
+            status=medication_request_update.status,
 
-    updated_data = medication_request_update.dict(exclude_unset=True)
-    for key, value in updated_data.items():
-        setattr(existing_medication_request, key, value)
-    return existing_medication_request
+        ).where(models.MedicationRequest.medication_request_id == existing_medication_request.medication_request_id
+        )
+    )
+    database.commit()
+
+
 
 

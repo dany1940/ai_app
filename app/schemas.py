@@ -13,6 +13,7 @@ class Person(BaseModel):
 
 
 class Patient(Person):
+   """"class patien validates birthday"""
    __pydantic_config__ = ConfigDict(use_enum_values=True, extra="forbid")
    date_of_birth: date
    gender: GenderType = Literal[GenderType.FEMALE.value]
@@ -48,6 +49,7 @@ class MedicationCreate(Medication):
 
 
 class MedicationRequestBase(BaseModel):
+  """class base for medication"""
   medication_request_id: int
   medication_reference: str
   reason:  str
@@ -58,13 +60,17 @@ class MedicationRequestBase(BaseModel):
   status: StatusType = Literal[StatusType.ACTIVE.value]
 
 class MedicationRequest(MedicationRequestBase):
+  """Pydantic class used for a  medication response"""
   patient_refrence: int
   clinician_refrence: int
 
 class MedicationRequestCreate(MedicationRequestBase):
     pass
 
-
+class MedicationRequestUpdate(BaseModel):
+    end_date: datetime
+    frequency: int
+    status: StatusType
 
 
 

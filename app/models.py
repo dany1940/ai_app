@@ -20,7 +20,7 @@ Base = declarative_base()
 
 class Patient(Base):
     __tablename__ = "patient_tab"
-
+    """"Table Used to create the Patient columns"""
     registration_id: int = Column(Integer, primary_key=True, autoincrement=True)
     first_name: str = Column(String, nullable=False)
     last_name: str = Column(String, nullable=False)
@@ -39,7 +39,7 @@ class Patient(Base):
 
 class Clinician(Base):
     __tablename__ = "clinician_tab"
-
+    """Table for clinician columns"""
     registration_id: int = Column(Integer, primary_key=True, autoincrement=True)
     first_name: str = Column(String, nullable=False)
     last_name: str = Column(String, nullable=False)
@@ -48,6 +48,7 @@ class Clinician(Base):
 
 class Medication(Base):
     __tablename__ = "medication_tab"
+    """"table holding the Medication Columns"""
     medication_reference: str = Column(String,  primary_key=True)
     code_name: str = Column(String, nullable=False)
     international_code_name: str | None = Column(String, nullable=True)
@@ -70,6 +71,7 @@ class Medication(Base):
 
 class MedicationRequest(Base):
     __tablename__ = "medication_request_tab"
+    """table holding the medication request columns"""
     medication_request_id: str = Column(String,  primary_key=True)
     clinician_refrence: int = Column(Integer, ForeignKey("clinician_tab.registration_id"))
     patient_refrence: int = Column(Integer, ForeignKey("patient_tab.registration_id"))

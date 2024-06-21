@@ -1,19 +1,22 @@
-from fastapi import APIRouter
-from fastapi import HTTPException
-from fastapi import status
-from app.dependencies import Database, Clinician
-import app.schemas
-from app import models
+from fastapi import APIRouter, HTTPException, status
 from psycopg2.errors import UniqueViolation
 
+import app.schemas
+from app import models
+from app.dependencies import Clinician, Database
 
-router = APIRouter(prefix="/clinician", tags=["clinician"], responses={404:{"description": "Not Found"}})
+router = APIRouter(
+    prefix="/clinician",
+    tags=["clinician"],
+    responses={404: {"description": "Not Found"}},
+)
+
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=None)
 def post_clinician(
     clinician: app.schemas.ClinicianCreate,
     database: Database,
-    existing_clinician: Clinician
+    existing_clinician: Clinician,
 ) -> None:
     """
     Create a new Clinician in DB
@@ -26,11 +29,10 @@ def post_clinician(
 
     new_clinician = models.Clinician(
         **clinician.model_dump(),
-
     )
     try:
-       database.add(new_clinician)
-       database.commit()
+        database.add(new_clinician)
+        database.commit()
     except UniqueViolation:
         raise HTTPException(
             409, detail="There is already a clinician with this credentials"

@@ -62,7 +62,7 @@ def get_patient(
 def get_clinician(
         database: Database,
         clinician: schemas.ClinicianCreate,
-    ):
+    ) -> models.Clinician:
         """
         Get a  patient from database
         """
@@ -80,10 +80,11 @@ def get_clinician(
             .unique()
             .scalar_one_or_none()
         )
+
 def get_medication(
         database: Database,
         medication: schemas.MedicationCreate
-    ):
+    ) -> models.Medication:
         """
         Get a  patient from database
         """
@@ -100,9 +101,60 @@ def get_medication(
             .unique()
             .scalar_one_or_none()
         )
-Medication = Annotated[None, Depends(get_medication)]
-Clinician  = Annotated[None, Depends(get_clinician)]
-Patient  = Annotated[None, Depends(get_patient)]
+
+def get_medication_by_id(
+            database: Database,
+            patient_refrence: int,
+    ) -> models.Medication:
+     return(database.execute(
+                select(models.Patient)
+                .where(
+                    and_(models.Patient.registration_id == patient_refrence
+                         )
+            )
+            )
+            .unique()
+            .scalar_one_or_none()
+    )
+
+def get_clinician_by_id(
+            database: Database,
+            registration_id: int,
+    ) -> models.Clinician:
+      return (database.execute(
+                select(models.Clinician)
+                .where(
+                    and_(models.Clinician.registration_id == registration_id
+                         )
+            )
+            )
+            .unique()
+            .scalar_one_or_none()
+    )
+
+def get_medication_request_by_id(
+            database: Database,
+            medication_request_id: str,
+    ) -> models.MedicationRequest:
+      return (database.execute(
+                select(models.MedicationRequest)
+                .where(
+                    and_(models.MedicationRequest.medication_request_id == medication_request_id
+                         )
+            )
+            )
+            .unique()
+            .scalar_one_or_none()
+    )
+
+
+
+Medication = Annotated[models.Medication, Depends(get_medication)]
+Clinician  = Annotated[models.Clinician, Depends(get_clinician)]
+Patient  = Annotated[models.Patient, Depends(get_patient)]
+MedicationById = Annotated[models.Medication, Depends(get_medication_by_id)]
+ClinicianById =  Annotated[models.Clinician, Depends(get_clinician_by_id)]
+MedicationRequestById= Annotated[models.MedicationRequest, Depends(get_medication_request_by_id)]
 
 
 

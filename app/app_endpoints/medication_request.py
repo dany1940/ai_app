@@ -2,32 +2,26 @@ import zoneinfo
 from app import models
 from fastapi import APIRouter
 from fastapi import HTTPException
-from fastapi import Query, Path
+from fastapi import Query
 from fastapi import status
 from app.commons import StatusType
 from datetime import datetime
 from datetime import timedelta
-from app.dependencies import Database
-from sqlalchemy import select
-from sqlalchemy import and_
-import app.schemas
-from app.schemas import MedicationRequest
-
-
+from app.dependencies import Database, MedicationById, ClinicianById, MedicationRequestById
+import app.schemas as schemas
+from sqlalchemy.sql import select, and_
+from sqlalchemy.orm import load_only
 
 router = APIRouter(prefix="/medication_request", tags=["medication_request"], responses={404:{"description": "Not Found"}})
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=None)
 def post_medication_request(
-    patient_reference: int,
-    medication_request: app.schemas.MedicationRequestCreate,
+
+    medication_request: schemas.MedicationRequestCreate,
     database: Database,
-    registration_id: int = Query(
-        default=None,
-        alias="practian_id",
-        description="Practician who prescribed!",  # noqa: E501
-    ),
+    existing_patient: MedicationById,
+    existing_clinician: ClinicianById,
 
 ) -> None:
     """
@@ -35,31 +29,10 @@ def post_medication_request(
     # Create a medication Request
     """
 
-    existing_patient =  (database.execute(
-                select(models.Patient)
-                .where(
-                    and_(models.Patient.registration_id == patient_reference
-                         )
-            )
-            )
-            .unique()
-            .scalar_one_or_none()
-    )
-
     if not existing_patient:
         raise HTTPException(
             404, detail="There is no patient to prescribe"
         )
-    existing_clinician = (database.execute(
-                select(models.Clinician)
-                .where(
-                    and_(models.Clinician.registration_id == registration_id
-                         )
-            )
-            )
-            .unique()
-            .scalar_one_or_none()
-    )
 
     if not existing_clinician:
         raise HTTPException(
@@ -67,8 +40,8 @@ def post_medication_request(
         )
     new_medication_request= models.MedicationRequest(
         **medication_request.model_dump( ),
-        patient_refrence = patient_reference,
-        clinician_refrence = registration_id
+        clinician_refrence=existing_clinician.registration_id,
+        patient_refrence=existing_patient.registration_id
 
     )
     database.add(new_medication_request)
@@ -77,7 +50,7 @@ def post_medication_request(
 
 
 
-@router.get("/", response_model=list[MedicationRequest])
+@router.get("/", status_code=status.HTTP_200_OK)
 async def get_medication_request_for_a_patient(
     database: Database,
     status_: StatusType
@@ -103,9 +76,7 @@ async def get_medication_request_for_a_patient(
     # Return a list of medication requests, inlcuding medication code and the clinician first and last name
     """
     # construct WHERE clause
-    filters =[]
-
-
+    filters = []
 
     timezone_utc = zoneinfo.ZoneInfo("UTC")
     now = datetime.now(tz=timezone_utc)
@@ -113,7 +84,7 @@ async def get_medication_request_for_a_patient(
     if end_date_ is None:
         end_date_ = now
     if start_date_ is None:
-        start_date_ = now - timedelta(days=10)
+        start_date_ = now - timedelta(days=365)
 
     if end_date_.tzinfo is None:
         end_date_ = end_date_.replace(tzinfo=timezone_utc)
@@ -139,10 +110,59 @@ async def get_medication_request_for_a_patient(
     if status_ is not None:
         filters.append(models.MedicationRequest.status == status_)
 
-    medical_requests =  (
-        database.query(models.MedicationRequest)
-        .filter(*filters)
+
+    return (
+        database.execute(
+            select(
+                    models.MedicationRequest,
+                    models.Clinician,
+                    models.Medication,
+                    )
+            .join(models.Medication, models.Medication.medication_reference == models.MedicationRequest.medication_reference)
+            .join(models.Clinician, models.Clinician.registration_id == models.MedicationRequest.clinician_refrence)
+            .options(load_only(
+                    models.MedicationRequest.clinician_refrence,
+                    models.MedicationRequest.status,
+                    models.MedicationRequest.start_date,
+                    models.MedicationRequest.end_date,
+                    models.MedicationRequest.prescription_date,
+                    ))
+            .options(load_only(
+                    models.Clinician.first_name,
+                    models.Clinician.last_name,
+                    ))
+            .options(load_only(models.Medication.code_name))
+            .where(
+            and_(
+                models.MedicationRequest.end_date <= end_date_,
+                models.MedicationRequest.start_date >= start_date_,
+            )
+        )
+            .filter(*filters)
+            .group_by(models.MedicationRequest, models.Clinician, models.Medication)
+
+        )
+
+        .scalars()
+        .all()
     )
 
-    return database.execute(medical_requests).unique().all()
+
+
+@router.patch("/{medication_request_id}", status_code=status.HTTP_200_OK, response_model=None)
+def modify_medication_request(
+    medication_request_update: schemas.MedicationRequestUpdate,
+    existing_medication_request: MedicationRequestById
+) -> None:
+    if not existing_medication_request:
+        raise HTTPException(
+            404, detail="There is no medication request with that id"
+        )
+
+
+    updated_data = medication_request_update.dict(exclude_unset=True)
+    for key, value in updated_data.items():
+        setattr(existing_medication_request, key, value)
+    return existing_medication_request
+
 

@@ -16,15 +16,15 @@ The contents of this GitHub repository is closed source and owned entirely by Da
 
 ## Deployment
 
-Clone the GitHub Repository
-cd in ai_app directory
-create a .env file and add
-POSTGRES_HOST=db
-POSTGRES_USER=postgres
-POSTGRES_PORT=5432
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=postgres
-Run the following commands env:
+Clone the GitHub Repository <br />
+cd in ai_app directory <br />
+create a .env file and add <br />
+POSTGRES_HOST=db <br />
+POSTGRES_USER=postgres <br />
+POSTGRES_PORT=5432 <br />
+POSTGRES_PASSWORD=postgres <br />
+POSTGRES_DB=postgres <br />
+Run the following commands env: <br />
  docker-compose build
  docker-compose run web alembic upgrade head
  docker-compose up

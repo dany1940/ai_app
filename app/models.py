@@ -229,6 +229,7 @@ class Organization(Base):
     address = Column(String, nullable=True)
     email = Column(String, nullable=True)
     telephone = Column(String, nullable=True)
+    institution_id = Column(Integer, ForeignKey("institution_tab.id"), nullable=True)
     profile_picture_id = Column(
         Integer,
         ForeignKey("image_tab.image_id"),

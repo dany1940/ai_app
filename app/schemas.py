@@ -209,17 +209,24 @@ class Institution(BaseModel):
     notes: str
     clinician_id: int
 
+class InstitutionCreate(Institution):
+    pass
+
 
 class Organization(BaseModel):
 
     id: int
     name: str
     created_on: datetime
+    institution_id: int
     address: str
     email: str
     telephone: str
     profile_picture_id: int
     url: str
+
+class OrganizationCreate(Organization):
+    pass
 
 
 class UserBase(BaseModel):
@@ -256,3 +263,28 @@ class Contact(BaseModel):
     contact: str
     contact_name: str
     institution_id: int
+
+class ContactCreate(Contact):
+    pass
+
+class UserCreate(BaseModel):
+    """
+    Properties to receive on user creation.
+    """
+
+    password: str
+    email: EmailStr
+    firstname: str | None = None
+    lastname: str | None = None
+    is_admin: bool = False
+    organization_name: str | None = None
+
+
+class UserPasswordUpdate(BaseModel):
+    """
+    Properties to receive on user password update.
+    """
+
+    old_password: str
+    new_password: str = Field(..., min_length=8)
+    confirm_password: str

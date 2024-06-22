@@ -14,7 +14,7 @@ class Person(BaseModel):
             title="Person first name",
             min_length=2,
             max_length=25,
-            pattern=r"[a-zA-Z]",
+            pattern=r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$",
             default="MARIA",
         ),
     ]
@@ -24,7 +24,7 @@ class Person(BaseModel):
             title="person last name",
             min_length=2,
             max_length=25,
-            pattern=r"[a-zA-Z]",
+            pattern=r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$",
             default="DOE",
         ),
     ]

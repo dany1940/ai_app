@@ -25,7 +25,6 @@ POSTGRES_PORT=5432 <br />
 POSTGRES_PASSWORD=postgres <br />
 POSTGRES_DB=postgres <br />
 Run the following commands env: <br />
-docker-compose build <br />
 docker-compose up <br />
 if everything succesful you can find the sqagger with the endpoints at: <br />
 http://0.0.0.0:8000/docs#/ <br />

@@ -225,6 +225,3 @@ def delete_user(
     )
     database.execute(delete(models.User).where(models.User.username == username))
     database.commit()
-
-
-

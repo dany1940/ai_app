@@ -209,6 +209,7 @@ class Institution(BaseModel):
     notes: str
     clinician_id: int
 
+
 class InstitutionCreate(Institution):
     pass
 
@@ -224,6 +225,7 @@ class Organization(BaseModel):
     telephone: str
     profile_picture_id: int
     url: str
+
 
 class OrganizationCreate(Organization):
     pass
@@ -264,8 +266,10 @@ class Contact(BaseModel):
     contact_name: str
     institution_id: int
 
+
 class ContactCreate(Contact):
     pass
+
 
 class UserCreate(BaseModel):
     """

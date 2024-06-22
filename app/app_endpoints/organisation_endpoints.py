@@ -5,10 +5,10 @@ from app import models
 from app.dependencies import Database, Organisation
 
 router = APIRouter(
-    prefix="/organistation", tags=["organisation"], responses={404: {"description": "Not Found"}}
+    prefix="/organistation",
+    tags=["organisation"],
+    responses={404: {"description": "Not Found"}},
 )
-
-
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=None)
@@ -82,4 +82,3 @@ def create_organization(
         .values(path=Ltree(f"{parent_organization_path or '1'}.{organization_id}"))
     )
     database.commit()
-

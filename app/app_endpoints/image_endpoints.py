@@ -9,11 +9,8 @@ router = APIRouter(
 )
 
 
-
 def get_image(image_id: int, database: Database) -> models.Image:
     image = database.get(models.Image, image_id)
     if not image:
         raise HTTPException(404, detail="Image not found")
     return image
-
-

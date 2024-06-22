@@ -17,7 +17,6 @@ router = APIRouter(
 )
 
 
-
 @router.post("/token", response_model=schemas.Token)
 async def login_for_access_token(
     database: Session = Depends(get_db),
@@ -36,9 +35,11 @@ async def login_for_access_token(
         "refresh_token": create_refresh_token(cast(str, user.username)),
         "expires_in": config.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
         "token_type": "bearer",
-        "role": schemas.UserAuthorisation.ADMIN
-        if user.can_edit
-        else schemas.UserAuthorisation.USER,
+        "role": (
+            schemas.UserAuthorisation.ADMIN
+            if user.can_edit
+            else schemas.UserAuthorisation.USER
+        ),
     }
 
 
@@ -101,9 +102,11 @@ def refresh_access_token(
         "refresh_token": create_refresh_token(username, fresh=False),
         "token_type": "bearer",
         "expires_in": config.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
-        "role": schemas.UserAuthorisation.ADMIN
-        if user.can_edit
-        else schemas.UserAuthorisation.USER,
+        "role": (
+            schemas.UserAuthorisation.ADMIN
+            if user.can_edit
+            else schemas.UserAuthorisation.USER
+        ),
     }
 
 

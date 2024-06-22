@@ -5,7 +5,9 @@ from app import models
 from app.dependencies import Database, Institution, Patient
 
 router = APIRouter(
-    prefix="/institution", tags=["institution"], responses={404: {"description": "Not Found"}}
+    prefix="/institution",
+    tags=["institution"],
+    responses={404: {"description": "Not Found"}},
 )
 
 
@@ -29,5 +31,3 @@ def post_institution(
     )
     database.add(new_institution)
     database.commit()
-
-

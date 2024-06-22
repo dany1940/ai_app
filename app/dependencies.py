@@ -1,6 +1,5 @@
 from typing import Annotated, cast
 
-from app.security import verify_password
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -12,6 +11,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app import models, schemas
 from app.conf import config
+from app.security import verify_password
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
@@ -36,8 +36,8 @@ def get_db():
     with Session(bind=engine) as database:
         yield database
 
-Database = Annotated[Session, Depends(get_db)]
 
+Database = Annotated[Session, Depends(get_db)]
 
 
 def get_patient(
@@ -155,31 +155,30 @@ def get_medication_request_by_id(
         .scalar_one_or_none()
     )
 
-def get_institution(
-    database: Database,
-    name: str,
-    user: models.UserModel
 
+def get_institution(
+    database: Database, name: str, user: models.UserModel
 ) -> models.Institution | None:
     """
     Get a  institution from database
     """
 
     return (
-            database.execute(
-                select(models.Institution)
-                .where(models.Institution.name == name)
-                .where(
-                    Institution.organization_id.in_(
-                        select(models.Organization.id).where(
-                            models.Organization.path.descendant_of(user.organization.path)
-                        )
+        database.execute(
+            select(models.Institution)
+            .where(models.Institution.name == name)
+            .where(
+                Institution.organization_id.in_(
+                    select(models.Organization.id).where(
+                        models.Organization.path.descendant_of(user.organization.path)
                     )
                 )
             )
-            .unique()
-            .scalar_one_or_none()
         )
+        .unique()
+        .scalar_one_or_none()
+    )
+
 
 def get_contact(
     database: Database,
@@ -202,12 +201,14 @@ def get_contact(
         .unique()
         .scalar_one_or_none()
     )
-def get_organization(
-) -> models.Organization | None:
+
+
+def get_organization() -> models.Organization | None:
     """
     Get a  organization from database
     """
     pass
+
 
 def get_image(
     database: Database,
@@ -228,6 +229,7 @@ def get_image(
         .unique()
         .scalar_one_or_none()
     )
+
 
 def authenticate_user(database, username: str, password: str):
     user: models.User | None = (
@@ -340,8 +342,6 @@ def get_current_admin_user(user: models.User = Depends(get_current_admin_user)):
             detail="You have insufficient rights to access this resource",
         )
     return user
-
-
 
 
 CurrentUser = Annotated[models.User, Depends(get_current_user)]

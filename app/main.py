@@ -24,7 +24,6 @@ routers = [
     institution_endpoints.router,
     patient_endpoints.router,
     user_endpoints.router,
-
 ]
 for router in routers:
     app.include_router(router)

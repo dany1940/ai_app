@@ -1,17 +1,17 @@
 from datetime import date, datetime
+from typing import Never
 
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql.schema import ForeignKey
-from sqlalchemy.sql.sqltypes import (TEXT, Date, DateTime, Enum, Integer,
-                                     SmallInteger, String, Integer, Boolean)
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql.schema import Column, ForeignKey, Identity
+from sqlalchemy.sql.sqltypes import (TEXT, Boolean, Date, DateTime, Enum,
+                                     Integer, SmallInteger, String)
+
 from app.commons import Base
-from .commons import FormType, GenderType, StatusType, TitleType, BloodGroupType
-from typing import Never
-from sqlalchemy.orm import (relationship)
-from sqlalchemy.sql.schema import Column, Identity
 
-
+from .commons import (BloodGroupType, FormType, GenderType, StatusType,
+                      TitleType)
 
 Base = declarative_base()
 
@@ -22,7 +22,7 @@ class Patient(Base):
     registration_id: Column[int] = Column(Integer, primary_key=True, autoincrement=True)
     first_name: Column[str] = Column(String, nullable=False)
     last_name: Column[str] = Column(String, nullable=False)
-    date_of_birth: Column[str] = Column(Date, nullable=False) # type: ignore
+    date_of_birth: Column[str] = Column(Date, nullable=False)  # type: ignore
     address: Column[str] = Column(String, nullable=False)
     is_smoker: Column[bool] = Column(Boolean, nullable=True)
     created_on: Column[datetime] = Column(DateTime, nullable=False)
@@ -49,8 +49,7 @@ class Patient(Base):
         default=BloodGroupType.A_POSITIVE.value,
     )
 
-
-    gender:Column[Never] =  Column(
+    gender: Column[Never] = Column(
         Enum(
             GenderType,
             name="GenderType",
@@ -61,7 +60,7 @@ class Patient(Base):
         server_default=GenderType.FEMALE.value,
         default=GenderType.FEMALE.value,
     )
-    title:  Column[Never] = Column(
+    title: Column[Never] = Column(
         Enum(
             TitleType,
             name="TytleType",
@@ -73,7 +72,7 @@ class Patient(Base):
         default=TitleType.MR.value,
     )
     is_alcohool_drinker: Column[bool] = Column(Boolean, nullable=False)
-    institution_number: Column[str] = Column(Integer,  ForeignKey("institution_tab.id"))
+    institution_number: Column[str] = Column(Integer, ForeignKey("institution_tab.id"))
 
 
 class Institution(Base):
@@ -81,33 +80,29 @@ class Institution(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)
-
     created_on = Column(DateTime, nullable=False)
-
-    # Default pressure thresholds designed to act as a default for all vehicles
-    # in a fleet. i.e. When a vehicle is created in a fleet, the thresholds should
-    # be set to these values.
-    default_maintenance_threshold: Column[float] = Column(DOUBLE_PRECISION, nullable=False)
-    default_warning_threshold: Column[float] = Column(DOUBLE_PRECISION, nullable=False)
-    default_danger_threshold: Column[float] = Column(DOUBLE_PRECISION, nullable=False)
     contact_number: Column[String] = Column(String(255), nullable=True)
-    organization_id: Column[Integer] = Column(Integer, ForeignKey("organization_tab.id"), nullable=False)
-    notes: Column[TEXT]= Column(TEXT, nullable=True)
-    clinician_id: Column[Integer] = Column(Integer, ForeignKey("clinician_tab.registration_id"), nullable=True)
+    organization_id: Column[Integer] = Column(
+        Integer, ForeignKey("organization_tab.id"), nullable=False
+    )
+    notes: Column[TEXT] = Column(TEXT, nullable=True)
+    clinician_id: Column[Integer] = Column(
+        Integer, ForeignKey("clinician_tab.registration_id"), nullable=True
+    )
     organization = relationship(
         "Organization",
         lazy="joined",
         uselist=False,
     )
 
-
     def __repr__(self) -> str:
         return f"Institution(id={self.id}, name={self.name})"
+
 
 class Clinician(Base):
     __tablename__ = "clinician_tab"
     """Table for clinician columns"""
-    registration_id: Column[int ]= Column(Integer, primary_key=True, autoincrement=True)
+    registration_id: Column[int] = Column(Integer, primary_key=True, autoincrement=True)
     gmc_number: Column[str] = Column(String, nullable=False)
     first_name: Column[str] = Column(String, nullable=False)
     last_name: Column[str] = Column(String, nullable=False)
@@ -128,16 +123,14 @@ class Clinician(Base):
     online_consultation_duration: Column[int] = Column(SmallInteger, nullable=True)
 
 
-
-
 class Medication(Base):
     __tablename__ = "medication_tab"
     """"table holding the Medication Columns"""
     medication_reference: Column[str] = Column(String, primary_key=True)
     code_name: Column[str] = Column(String, nullable=False)
-    international_code_name: Column[str | None] = Column(String, nullable=True) # type: ignore
-    strength_value: Column[int | None] = Column(SmallInteger, nullable=True) # type: ignore
-    strenght_unit: Column[float | None] = Column(DOUBLE_PRECISION, nullable=True)# type: ignore
+    international_code_name: Column[str | None] = Column(String, nullable=True)  # type: ignore
+    strength_value: Column[int | None] = Column(SmallInteger, nullable=True)  # type: ignore
+    strenght_unit: Column[float | None] = Column(DOUBLE_PRECISION, nullable=True)  # type: ignore
     form: Never = Column(
         Enum(
             FormType,
@@ -147,7 +140,7 @@ class Medication(Base):
         nullable=False,
         default=FormType.CAPSULE.value,
         server_default=FormType.CAPSULE.value,
-    )# type: ignore
+    )  # type: ignore
     brand_name: Column[str] = Column(String, nullable=False)
     active_ingredient_name: Column[str] = Column(String, nullable=False)
     excipient_name: Column[str] = Column(String, nullable=False)
@@ -160,7 +153,7 @@ class Medication(Base):
     smell: Column[str] = Column(String, nullable=False)
     taste: Column[str] = Column(String, nullable=False)
     usage_of_excipient: Column[str] = Column(String, nullable=False)
-    indications : Column[str] = Column(String, nullable=False)
+    indications: Column[str] = Column(String, nullable=False)
     contraindications: Column[str] = Column(String, nullable=False)
     is_allowed_for_children: Column[bool] = Column(Boolean, nullable=False)
     medication_category: Column[str] = Column(String, nullable=False)
@@ -191,9 +184,6 @@ class Medication(Base):
     is_medical_radioactive: Column[bool] = Column(Boolean, nullable=False)
 
 
-
-
-
 class MedicationRequest(Base):
     __tablename__ = "medication_request_tab"
     """table holding the medication request columns"""
@@ -201,11 +191,13 @@ class MedicationRequest(Base):
     clinician_refrence: Column[int] = Column(
         Integer, ForeignKey("clinician_tab.registration_id")
     )
-    patient_refrence: Column[int] = Column(Integer, ForeignKey("patient_tab.registration_id"))
-    reason: Column[date | None] = Column(TEXT, nullable=True)# type: ignore
+    patient_refrence: Column[int] = Column(
+        Integer, ForeignKey("patient_tab.registration_id")
+    )
+    reason: Column[date | None] = Column(TEXT, nullable=True)  # type: ignore
     prescription_date: Column[datetime] = Column(DateTime, nullable=False)
     start_date: Column[datetime] = Column(DateTime, nullable=False)
-    end_date: Column[datetime | None] = Column(DateTime, nullable=True)# type: ignore
+    end_date: Column[datetime | None] = Column(DateTime, nullable=True)  # type: ignore
     frequency: Column[int] = Column(SmallInteger, nullable=False)
     status: Never = Column(
         Enum(
@@ -217,7 +209,7 @@ class MedicationRequest(Base):
         nullable=False,
         default=StatusType.ACTIVE.value,
         server_default=StatusType.ACTIVE.value,
-    )# type: ignore
+    )  # type: ignore
 
 
 class Image(Base):
@@ -226,9 +218,6 @@ class Image(Base):
     image_id = Column(Integer, Identity(always=True), primary_key=True)
     link = Column(String, nullable=False)
     created_on = Column(DateTime(timezone=False), nullable=False)
-
-
-
 
 
 class Organization(Base):
@@ -264,10 +253,9 @@ class User(Base):
         Boolean, default=False, server_default="false", nullable=False
     )
     organization_id = Column(Integer, ForeignKey("organization_tab.id"), nullable=True)
+
     def __repr__(self) -> str:
         return f"User(email={self.email}, organization={self.organization_id})"
-
-
 
 
 class Contact(Base):

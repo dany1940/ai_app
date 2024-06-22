@@ -25,6 +25,7 @@ class StatusType(enum.Enum):
     CANCELLED = "CANCCELED"
     COMPLETED = "COMPLETED"
 
+
 class TitleType(enum.Enum):
     MR = "MR"
     MRS = "MRS"
@@ -32,6 +33,7 @@ class TitleType(enum.Enum):
     DR = "DR"
     PROF = "PROF"
     REV = "REV"
+
 
 class BloodGroupType(enum.Enum):
     A_POSITIVE = "A_POSITIVE"
@@ -42,6 +44,11 @@ class BloodGroupType(enum.Enum):
     AB_NEGATIVE = "AB_NEGATIVE"
     O_POSITIVE = "O_POSITIVE"
     O_NEGATIVE = "O_NEGATIVE"
+
+
+class UserAuthorisation(enum.Enum):
+    USER = "USER"
+    ADMIN = "ADMIN"
 
 
 Base = declarative_base()

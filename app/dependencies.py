@@ -3,8 +3,7 @@ from typing import Annotated, cast
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError  # type: ignore
-from jose import jwt  # type: ignore
+
 from sqlalchemy import and_, create_engine, or_, select
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, joinedload
@@ -12,7 +11,6 @@ from sqlalchemy.orm import Session, joinedload
 from app import models, schemas
 from app.conf import config
 from app.security import verify_password
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 
@@ -157,7 +155,7 @@ def get_medication_request_by_id(
 
 
 def get_institution(
-    database: Database, name: str, user: models.UserModel
+    database: Database, name: str, user: models.User
 ) -> models.Institution | None:
     """
     Get a  institution from database
@@ -212,7 +210,7 @@ def get_organization() -> models.Organization | None:
 
 def get_image(
     database: Database,
-    image: schemas.ImageCreate,
+    image: schemas.Image,
 ) -> models.Image | None:
     """
     Get a  image from database

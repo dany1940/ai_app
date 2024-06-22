@@ -23,6 +23,10 @@ black = "^24.4.2"
 mypy = "^1.10.0"
 types-psycopg2 = "^2.9.21.20240417"
 sqlalchemy-utils = "^0.41.2"
+python-jose = "^3.3.0"
+python-jwt = "^4.1.0"
+pyjwt = "2.1.0"
+passlib = "^1.7.4"
 
 
 [build-system]

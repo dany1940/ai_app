@@ -90,7 +90,7 @@ class Clinician(Base):
     address: Column[str] = Column(String, nullable=False)
     about: Column[str] = Column(TEXT, nullable=True)
     profile_picture = relationship("Image", uselist=False)
-
+    image_id = Column(Integer, ForeignKey("image_tab.image_id"))
     created_on: Column[datetime] = Column(DateTime, nullable=False)
     updated_on: Column[datetime] = Column(DateTime, nullable=False)
     rating: Column[float] = Column(DOUBLE_PRECISION, nullable=True)

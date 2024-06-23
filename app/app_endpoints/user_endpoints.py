@@ -1,15 +1,21 @@
+from typing import cast
+
 from fastapi import APIRouter, HTTPException, status
+from sqlalchemy import delete, insert, or_, update
+from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import select
 
 from app import models
-from app.dependencies import Database, User
-from app.schemas import User
+from app.dependencies import CurrentAdminUser, CurrentUser, Database
+from app.schemas import UserCreate, UserPasswordUpdate, UserUpdate
+from app.security import get_password_hash, verify_password
 
 router = APIRouter(
     prefix="/user", tags=["user"], responses={404: {"description": "Not Found"}}
 )
 
 
-@router.get("/me", response_model=User)
+@router.get("/me", response_model=None)
 def get_current_user(
     user: CurrentUser,
 ):
@@ -59,7 +65,7 @@ def update_password(
 
 @router.put("/me")
 def update_current_user(
-    new_user: schemas.UserUpdate,
+    new_user: UserUpdate,
     database: Database,
     user: CurrentUser,
 ):
@@ -103,7 +109,7 @@ def update_current_user(
     database.commit()
 
 
-@router.get("/users/{username}", response_model=schemas.User)
+@router.get("/users/{username}", response_model=None)
 def get_user(
     username: str,
     user: CurrentAdminUser,
@@ -129,7 +135,7 @@ def create_user(
     user: UserCreate,
     database: Database,
     current_user: CurrentAdminUser,
-) -> None:
+):
     """
     Create a new user in your organization.
     """
@@ -190,7 +196,7 @@ def delete_user(
     username: str,
     database: Database,
     current_user: CurrentAdminUser,
-) -> None:
+):
     if username == current_user.username:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

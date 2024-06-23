@@ -75,30 +75,6 @@ class Patient(Base):
     institution_number: Column[str] = Column(Integer, ForeignKey("institution_tab.id"))
 
 
-class Institution(Base):
-    __tablename__ = "institution_tab"
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False)
-    created_on = Column(DateTime, nullable=False)
-    contact_number: Column[String] = Column(String(255), nullable=True)
-    organization_id: Column[Integer] = Column(
-        Integer, ForeignKey("organization_tab.id"), nullable=False
-    )
-    notes: Column[TEXT] = Column(TEXT, nullable=True)
-    clinician_id: Column[Integer] = Column(
-        Integer, ForeignKey("clinician_tab.registration_id"), nullable=True
-    )
-    organization = relationship(
-        "Organization",
-        lazy="joined",
-        uselist=False,
-    )
-
-    def __repr__(self) -> str:
-        return f"Institution(id={self.id}, name={self.name})"
-
-
 class Clinician(Base):
     __tablename__ = "clinician_tab"
     """Table for clinician columns"""
@@ -239,6 +215,23 @@ class Organization(Base):
 
     def __repr__(self) -> str:
         return f"Organization(name={self.name})"
+
+
+class Institution(Base):
+    __tablename__ = "institution_tab"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    created_on = Column(DateTime, nullable=False)
+    contact_number: Column[String] = Column(String(255), nullable=True)
+
+    notes: Column[TEXT] = Column(TEXT, nullable=True)
+    clinician_id: Column[Integer] = Column(
+        Integer, ForeignKey("clinician_tab.registration_id"), nullable=True
+    )
+
+    def __repr__(self) -> str:
+        return f"Institution(id={self.id}, name={self.name})"
 
 
 class User(Base):

@@ -1,25 +1,24 @@
 from typing import cast
 
-from apps.common import models
-from apps.common.config import config
-from apps.web import schemas
-from apps.web.api.deps import CurrentUser, authenticate_user, get_db
-from apps.web.security import (create_access_token, create_refresh_token,
-                               refresh_token_valid, revoke_refresh_token)
 from fastapi import APIRouter, Depends, Form, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError  # type: ignore
 from jose import jwt  # type: ignore
-from sqlalchemy.orm import Session
+
+from app import conf, models, schemas
+from app.commons import Token
+from app.dependencies import CurrentUser, Database, authenticate_user
+from app.security import (create_access_token, create_refresh_token,
+                          refresh_token_valid, revoke_refresh_token)
 
 router = APIRouter(
     prefix="/auth",
 )
 
 
-@router.post("/token", response_model=schemas.Token)
+@router.post("/token", response_model=Token)
 async def login_for_access_token(
-    database: Session = Depends(get_db),
+    database: Database,
     form_data: OAuth2PasswordRequestForm = Depends(),
 ):
     user = authenticate_user(database, form_data.username, form_data.password)
@@ -33,7 +32,7 @@ async def login_for_access_token(
     return {
         "access_token": create_access_token(cast(str, user.username)),
         "refresh_token": create_refresh_token(cast(str, user.username)),
-        "expires_in": config.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+        "expires_in": conf.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
         "token_type": "bearer",
         "role": (
             schemas.UserAuthorisation.ADMIN
@@ -43,11 +42,11 @@ async def login_for_access_token(
     }
 
 
-@router.post("/refresh", response_model=schemas.Token)
+@router.post("/refresh", response_model=Token)
 def refresh_access_token(
+    database: Database,
     refresh_token: str = Form(...),
     grant_type: str = Form(...),
-    database: Session = Depends(get_db),
 ):
     bad_request_exception = HTTPException(
         status.HTTP_400_BAD_REQUEST,
@@ -63,7 +62,7 @@ def refresh_access_token(
     # JWT token.
     try:
         payload = jwt.decode(
-            refresh_token, config.SECRET_KEY, algorithms=[config.HASH_ALGORITHM]
+            refresh_token, conf.SECRET_KEY, algorithms=[conf.HASH_ALGORITHM]
         )
     except JWTError as error:
         raise bad_request_exception from error
@@ -101,7 +100,7 @@ def refresh_access_token(
         "access_token": create_access_token(username, fresh=False),
         "refresh_token": create_refresh_token(username, fresh=False),
         "token_type": "bearer",
-        "expires_in": config.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+        "expires_in": conf.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
         "role": (
             schemas.UserAuthorisation.ADMIN
             if user.can_edit

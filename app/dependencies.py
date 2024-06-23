@@ -3,7 +3,6 @@ from typing import Annotated, cast
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-
 from sqlalchemy import and_, create_engine, or_, select
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, joinedload
@@ -11,6 +10,7 @@ from sqlalchemy.orm import Session, joinedload
 from app import models, schemas
 from app.conf import config
 from app.security import verify_password
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 
@@ -229,7 +229,7 @@ def get_image(
     )
 
 
-def authenticate_user(database, username: str, password: str):
+def authenticate_user(database: Database, username: str, password: str):
     user: models.User | None = (
         database.query(models.User).filter(models.User.username == username).first()
     )
@@ -242,7 +242,7 @@ def authenticate_user(database, username: str, password: str):
 
 def user_from_token(
     token: str,
-    database: Session,
+    database: Database,
     credentials_exception: Exception | None = None,
 ) -> models.User:
     """
@@ -293,7 +293,7 @@ def user_from_token(
 def get_current_user(
     database: Database,
     token: str = Depends(oauth2_scheme),
-) -> models.User:
+):
     """
     Validate the user's JWT token.
 
@@ -303,25 +303,10 @@ def get_current_user(
     return user_from_token(token, database)
 
 
-def get_current_admin_user(
-    user: models.User = Depends(get_current_user),
-) -> models.User:
-    """
-    Validate the user's JWT token.
-
-    If the token is valid, and the user is an admin, return the currently
-    logged in administrator. If the token is invalid, raise an `HTTP 401 (Unauthorized)`
-    exception. If the user is not an admin, raise `HTTP 403 (Forbidden)`.
-    """
-    if user.can_edit is False:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You have insufficient rights to access this resource",
-        )
-    return user
+CurrentUser = Annotated[models.User, Depends(get_current_user)]
 
 
-def get_current_super_user(user: models.User = Depends(get_current_user)):
+def get_current_super_user(user: CurrentUser):
     """
     Returns the current user if they're in the RL Automotive
     """
@@ -333,7 +318,7 @@ def get_current_super_user(user: models.User = Depends(get_current_user)):
     return user
 
 
-def get_current_admin_user(user: models.User = Depends(get_current_admin_user)):
+def get_current_admin_user(user: CurrentUser):
     if user.organization_id != 1:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -342,7 +327,8 @@ def get_current_admin_user(user: models.User = Depends(get_current_admin_user)):
     return user
 
 
-CurrentUser = Annotated[models.User, Depends(get_current_user)]
+CurrentSuperUser = Annotated[models.User, Depends(get_current_super_user)]
+CurrentAdminUser = Annotated[models.User, Depends(get_current_admin_user)]
 Image = Annotated[models.Image, Depends(get_image)]
 Organisation = Annotated[models.Organization, Depends(get_institution)]
 Contact = Annotated[models.Contact, Depends(get_contact)]

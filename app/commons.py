@@ -1,5 +1,7 @@
 import enum
+from typing import Literal
 
+from pydantic import UUID4, BaseModel
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -52,3 +54,21 @@ class UserAuthorisation(enum.Enum):
 
 
 Base = declarative_base()
+
+
+class Token(BaseModel):
+    token_type: str
+    refresh_token: str
+    expires_in: int
+    access_token: str
+    role: UserAuthorisation
+
+
+class TokenData(BaseModel):
+    sub: str
+    exp: int
+    iat: int
+    nbf: int
+    jti: UUID4
+    type: Literal["access", "refresh"]
+    fresh: bool

@@ -1,8 +1,11 @@
 from fastapi import APIRouter, HTTPException, status
+from sqlalchemy import func, insert, select, update
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy_utils import Ltree
 
-import app.schemas
 from app import models
-from app.dependencies import Database, Organisation
+from app.dependencies import CurrentAdminUser, Database
+from app.schemas import OrganizationCreate
 
 router = APIRouter(
     prefix="/organistation",
@@ -11,36 +14,14 @@ router = APIRouter(
 )
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=None)
-def post_organisation(
-    organisation: app.schemas.OrganizationCreate,
-    database: Database,
-    existing_organisation: Organisation,
-):
-    """
-    Create a new Organisation
-    """
-
-    if existing_organisation:
-        raise HTTPException(
-            409, detail="There is already a organisation with this credentials"
-        )
-
-    new_organisation = models.Organization(
-        **organisation.model_dump(),
-    )
-    database.add(new_organisation)
-    database.commit()
-
-
 @router.post(
     "/organizations/{organization_name}",
-    dependencies=[Depends(get_current_admin_rl_user)],
 )
 def create_organization(
     organization_name: str,
     organization_fields: OrganizationCreate,
     database: Database,
+    dependencies=CurrentAdminUser,
 ):
     """
     Create a new organization.
@@ -67,7 +48,7 @@ def create_organization(
             )
             .returning(models.Organization.id)
         ).scalar_one_or_none()
-    except sqlalchemy.exc.IntegrityError as error:
+    except IntegrityError as error:
         # The only (famous last words) error that can occur here is a 409 (Conflict)
         # since the address, email, etc. have already been validated by pydantic
         # and the only UNIQUE field on this table is "name".

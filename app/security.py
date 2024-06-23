@@ -2,10 +2,13 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 
+from jose import jwt
+from passlib.context import CryptContext
+
 from app.conf import config
 
-#context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-context = []
+context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 denylist = set()
 
 

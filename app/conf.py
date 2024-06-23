@@ -21,6 +21,4 @@ class Config:
 
 
 config = Config()
-ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-REFRESH_TOKEN_EXPIRE_MINUTES: int = 1_440
-HASH_ALGORITHM: str = "HS256"
+

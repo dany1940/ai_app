@@ -5,7 +5,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError  # type: ignore
 from jose import jwt  # type: ignore
 
-from app import conf, models, schemas
+from app.conf import config
+from app import models, schemas
 from app.commons import Token, UserAuthorisation
 from app.dependencies import CurrentUser, Database, authenticate_user
 from app.security import (create_access_token, create_refresh_token,
@@ -32,7 +33,7 @@ async def login_for_access_token(
     return {
         "access_token": create_access_token(cast(str, user.username)),
         "refresh_token": create_refresh_token(cast(str, user.username)),
-        "expires_in": conf.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+        "expires_in": config.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
         "token_type": "bearer",
         "role": (UserAuthorisation.ADMIN if user.can_edit else UserAuthorisation.USER),
     }
@@ -58,7 +59,7 @@ def refresh_access_token(
     # JWT token.
     try:
         payload = jwt.decode(
-            refresh_token, conf.SECRET_KEY, algorithms=[conf.HASH_ALGORITHM]
+            refresh_token, config.SECRET_KEY, algorithms=[config.HASH_ALGORITHM]
         )
     except JWTError as error:
         raise bad_request_exception from error
@@ -96,9 +97,9 @@ def refresh_access_token(
         "access_token": create_access_token(username, fresh=False),
         "refresh_token": create_refresh_token(username, fresh=False),
         "token_type": "bearer",
-        "expires_in": conf.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+        "expires_in": config.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
         "role": (
-            schemas.UserAuthorisation.ADMIN
+            UserAuthorisation.ADMIN
             if user.can_edit
             else schemas.UserAuthorisation.USER
         ),

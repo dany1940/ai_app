@@ -97,11 +97,20 @@ class Clinician(Person):
     mc_number: str
     password: str
     about: str
+    image_id: int
     profile_picture: Image
     rating: float
     online_consultation: bool
     online_consultation_fee: float
     online_consultation_duration: int
+
+
+
+
+
+
+
+
 
 
 class ClinicianCreate(Clinician):

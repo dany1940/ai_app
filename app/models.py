@@ -74,7 +74,14 @@ class Patient(Base):
     is_alcohool_drinker: Column[bool] = Column(Boolean, nullable=False)
     institution_number: Column[str] = Column(Integer, ForeignKey("institution_tab.id"))
 
+class Image(Base):
+    __tablename__ = "image_tab"
 
+    image_id = Column(Integer, Identity(always=True), primary_key=True)
+    link = Column(String, nullable=False)
+    created_on = Column(DateTime(timezone=False), nullable=False)
+
+    
 class Clinician(Base):
     __tablename__ = "clinician_tab"
     """Table for clinician columns"""
@@ -188,12 +195,7 @@ class MedicationRequest(Base):
     )  # type: ignore
 
 
-class Image(Base):
-    __tablename__ = "image_tab"
 
-    image_id = Column(Integer, Identity(always=True), primary_key=True)
-    link = Column(String, nullable=False)
-    created_on = Column(DateTime(timezone=False), nullable=False)
 
 
 class Organization(Base):
@@ -211,6 +213,7 @@ class Organization(Base):
         ForeignKey("image_tab.image_id"),
         nullable=True,
     )
+    users = relationship("User", back_populates="organization")
     url = Column(String, nullable=True)
 
     def __repr__(self) -> str:
@@ -230,12 +233,15 @@ class Institution(Base):
         Integer, ForeignKey("clinician_tab.registration_id"), nullable=True
     )
 
+
     def __repr__(self) -> str:
         return f"Institution(id={self.id}, name={self.name})"
 
 
 class User(Base):
     __tablename__ = "user_tab"
+    __allow_unmapped__ = True
+
 
     id: int = Column(Integer, Identity(always=True), primary_key=True)
     username: str = Column(String, nullable=False, unique=True)
@@ -247,7 +253,8 @@ class User(Base):
         Boolean, default=False, server_default="false", nullable=False
     )
     organization_id = Column(Integer, ForeignKey("organization_tab.id"), nullable=True)
-
+    organization: "Organization" = relationship(
+        "Organization", lazy="joined", uselist=False, back_populates="users")
     def __repr__(self) -> str:
         return f"User(email={self.email}, organization={self.organization_id})"
 

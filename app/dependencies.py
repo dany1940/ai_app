@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, joinedload
 from app import models, schemas
 from app.conf import config
 from app.security import verify_password
+from jose import JWTError, jwt
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
@@ -190,9 +191,9 @@ def get_contact(
         database.execute(
             select(models.Contact).where(
                 and_(
-                    models.Contact.first_name == contact.first_name,
-                    models.Contact.last_name == contact.last_name,
-                    models.Contact.contact_number == contact.contact_number,
+                    models.Contact.contact == contact.contact,
+                    models.Contact.contact_name== contact.contact_name,
+                    models.Contact.institution_id == contact.institution_id,
                 )
             )
         )
@@ -282,7 +283,8 @@ def user_from_token(
     user = (
         database.query(models.User)
         .filter(models.User.username == username)
-        .options(joinedload(models.User.organization, innerjoin=True))
+        .join(models.User.organization)
+        .options(joinedload(models.User.organization))
         .first()
     )
     if user is None:

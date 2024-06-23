@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from psycopg2.errors import UniqueViolation
+from  app.dependencies import get_db
 
 import app.schemas
 from app import models
@@ -30,10 +30,5 @@ def post_clinician(
     new_clinician = models.Clinician(
         **clinician.model_dump(),
     )
-    try:
-        database.add(new_clinician)
-        database.commit()
-    except UniqueViolation:
-        raise HTTPException(
-            409, detail="There is already a clinician with this credentials"
-        )
+
+    database.add(new_clinician)

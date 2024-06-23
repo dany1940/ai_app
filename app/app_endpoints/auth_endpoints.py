@@ -6,8 +6,8 @@ from jose import JWTError  # type: ignore
 from jose import jwt  # type: ignore
 
 from app import conf, models, schemas
-from app.commons import (Token, UserAuthorisation)
-from app.dependencies import (CurrentUser, Database, authenticate_user)
+from app.commons import Token, UserAuthorisation
+from app.dependencies import CurrentUser, Database, authenticate_user
 from app.security import (create_access_token, create_refresh_token,
                           refresh_token_valid, revoke_refresh_token)
 
@@ -34,11 +34,7 @@ async def login_for_access_token(
         "refresh_token": create_refresh_token(cast(str, user.username)),
         "expires_in": conf.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
         "token_type": "bearer",
-        "role": (
-            UserAuthorisation.ADMIN
-            if user.can_edit
-            else UserAuthorisation.USER
-        ),
+        "role": (UserAuthorisation.ADMIN if user.can_edit else UserAuthorisation.USER),
     }
 
 

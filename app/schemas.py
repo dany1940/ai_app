@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 from pydantic import (BaseModel, ConfigDict, EmailStr, Field, PositiveInt,
                       validator)
@@ -86,31 +86,43 @@ class PatientCreate(Patient):
 
 
 class Image(BaseModel):
-
-    image_id: int
+    model_config = ConfigDict(from_attributes=True)
     link: str
     created_on: datetime
+    clinician_id: int
+
+
+class ImageCreate(Image):
+    pass
 
 
 class Clinician(Person):
+
+    model_config = ConfigDict(from_attributes=True)
+
     gmc_number: str
     mc_number: str
     password: str
     about: str
-    image_id: int
-    profile_picture: Image
     rating: float
     online_consultation: bool
     online_consultation_fee: float
     online_consultation_duration: int
 
 
+class UserOverview(BaseModel):
+    """
+    Properties containing the overview of a user without returning all fields.
+    """
 
+    model_config = ConfigDict(from_attributes=True)
 
-
-
-
-
+    username: str
+    firstname: str | None = None
+    lastname: str | None = None
+    organization_name: str
+    is_admin: bool
+    email: str
 
 
 class ClinicianCreate(Clinician):
@@ -216,7 +228,7 @@ class Institution(BaseModel):
     contact_number: str
     organization_id: int
     notes: str
-    clinician_id: int
+    clinician: List[Clinician]
 
 
 class InstitutionCreate(Institution):
@@ -234,6 +246,7 @@ class Organization(BaseModel):
     telephone: str
     profile_picture_id: int
     url: str
+    path: str
 
 
 class OrganizationCreate(Organization):

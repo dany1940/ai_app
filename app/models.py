@@ -1,12 +1,17 @@
 from datetime import date, datetime
 from typing import Never
 
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import (Mapped, Session, mapped_column, object_session,
+                            relationship)
 from sqlalchemy.sql.schema import Column, ForeignKey, Identity
 from sqlalchemy.sql.sqltypes import (TEXT, Boolean, Date, DateTime, Enum,
                                      Integer, SmallInteger, String)
+from sqlalchemy_utils import LtreeType
+from sqlalchemy_utils.types.ltree import LQUERY
 
 from app.commons import Base
 
@@ -74,36 +79,111 @@ class Patient(Base):
     is_alcohool_drinker: Column[bool] = Column(Boolean, nullable=False)
     institution_number: Column[str] = Column(Integer, ForeignKey("institution_tab.id"))
 
+
 class Image(Base):
     __tablename__ = "image_tab"
 
-    image_id = Column(Integer, Identity(always=True), primary_key=True)
+    image_id = mapped_column(Integer, Identity(always=True), primary_key=True)
     link = Column(String, nullable=False)
     created_on = Column(DateTime(timezone=False), nullable=False)
 
-    
-class Clinician(Base):
-    __tablename__ = "clinician_tab"
-    """Table for clinician columns"""
-    registration_id: Column[int] = Column(Integer, primary_key=True, autoincrement=True)
-    gmc_number: Column[str] = Column(String, nullable=False)
-    first_name: Column[str] = Column(String, nullable=False)
-    last_name: Column[str] = Column(String, nullable=False)
 
-    mobile_number: Column[str] = Column(String, nullable=False)
-    email: Column[str] = Column(String, nullable=False)
-    password: Column[str] = Column(String, nullable=False)
-    mc_number: Column[str] = Column(String, nullable=False)
-    address: Column[str] = Column(String, nullable=False)
-    about: Column[str] = Column(TEXT, nullable=True)
-    profile_picture = relationship("Image", uselist=False)
-    image_id = Column(Integer, ForeignKey("image_tab.image_id"))
-    created_on: Column[datetime] = Column(DateTime, nullable=False)
-    updated_on: Column[datetime] = Column(DateTime, nullable=False)
-    rating: Column[float] = Column(DOUBLE_PRECISION, nullable=True)
-    online_consultation: Column[bool] = Column(Boolean, nullable=True)
-    online_consultation_fee: Column[float] = Column(DOUBLE_PRECISION, nullable=True)
-    online_consultation_duration: Column[int] = Column(SmallInteger, nullable=True)
+class Institution(Base):
+    __tablename__ = "institution_tab"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    created_on = Column(DateTime, nullable=False)
+    contact_number: Column[String] = Column(String(255), nullable=True)
+    organization_id: Column[Integer] = Column(
+        Integer, ForeignKey("organization_tab.id"), nullable=True
+    )
+    organisation = relationship("Organization", back_populates="institution")
+    registration_id: Column[Integer] = Column(
+        Integer, ForeignKey("clinician_tab.registration_id"), nullable=True
+    )
+    clinician: Mapped[list["Clinician"]] = relationship(
+        "Clinician",
+        lazy="joined",
+    )
+    notes: Column[TEXT] = Column(TEXT, nullable=True)
+
+    def __repr__(self) -> str:
+        return f"Institution(id={self.id}, name={self.name})"
+
+
+class Contact(Base):
+    """
+    Table representing an email contact for an institution.
+    """
+
+    __tablename__ = "contact_tab"
+    contact = Column(TEXT, primary_key=True)
+    contact_name = Column(TEXT, nullable=False)
+
+    institution_id = Column(Integer, ForeignKey("institution_tab.id"), primary_key=True)
+
+
+class Organization(Base):
+    __tablename__ = "organization_tab"
+
+    id = Column(Integer, Identity(always=True), primary_key=True)
+    name = Column(String, nullable=False, unique=True)
+    created_on = Column(DateTime(timezone=False), nullable=False, unique=False)
+    address = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    telephone = Column(String, nullable=True)
+    institution = relationship("Institution", back_populates="organisation")
+    profile_picture_id = Column(
+        Integer,
+        ForeignKey("image_tab.image_id"),
+        nullable=True,
+    )
+    users = relationship("User", back_populates="organization")
+    url = Column(String, nullable=True)
+    path = Column(LtreeType, nullable=False)
+
+    @hybrid_property
+    def children(self) -> list["Organization"]:
+        session = object_session(self)
+        if isinstance(session, Session):
+            return (
+                session.execute(
+                    select(Organization).where(
+                        Organization.path.lquery(
+                            expression.cast(f"{self.path}.*{{1}}", LQUERY)  # type: ignore # noqa: E501
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            )
+        raise NotImplementedError("Method not implemented for async sessions")
+
+    def __repr__(self) -> str:
+        return f"Organization(name={self.name})"
+
+
+class User(Base):
+    __tablename__ = "user_tab"
+    __allow_unmapped__ = True
+
+    id: int = Column(Integer, Identity(always=True), primary_key=True)
+    username: str = Column(String, nullable=False, unique=True)
+    email: str = Column(String, nullable=False, unique=True)
+    pword_hash: str = Column(String, nullable=False)
+    firstname: str | None = Column(String, nullable=True)
+    lastname: str | None = Column(String, nullable=True)
+    can_edit: bool = Column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
+    organization_id = Column(Integer, ForeignKey("organization_tab.id"), nullable=True)
+    organization: "Organization" = relationship(
+        "Organization", lazy="joined", uselist=False, back_populates="users"
+    )
+
+    def __repr__(self) -> str:
+        return f"User(email={self.email}, organization={self.organization_id})"
 
 
 class Medication(Base):
@@ -195,77 +275,26 @@ class MedicationRequest(Base):
     )  # type: ignore
 
 
+class Clinician(Base):
+    __tablename__ = "clinician_tab"
+    """Table for clinician columns"""
 
-
-
-class Organization(Base):
-    __tablename__ = "organization_tab"
-
-    id = Column(Integer, Identity(always=True), primary_key=True)
-    name = Column(String, nullable=False, unique=True)
-    created_on = Column(DateTime(timezone=False), nullable=False, unique=False)
-    address = Column(String, nullable=True)
-    email = Column(String, nullable=True)
-    telephone = Column(String, nullable=True)
-    institution_id = Column(Integer, ForeignKey("institution_tab.id"), nullable=True)
-    profile_picture_id = Column(
-        Integer,
-        ForeignKey("image_tab.image_id"),
-        nullable=True,
+    registration_id: Column[int] = Column(Integer, primary_key=True, autoincrement=True)
+    gmc_number: Column[str] = Column(String, nullable=False)
+    first_name: Column[str] = Column(String, nullable=False)
+    last_name: Column[str] = Column(String, nullable=False)
+    mobile_number: Column[str] = Column(String, nullable=False)
+    email: Column[str] = Column(String, nullable=False)
+    password: Column[str] = Column(String, nullable=False)
+    mc_number: Column[str] = Column(String, nullable=False)
+    address: Column[str] = Column(String, nullable=False)
+    about: Column[str] = Column(TEXT, nullable=True)
+    institution: Mapped[Institution] = relationship(
+        "Institution", lazy="joined", overlaps="clinician"
     )
-    users = relationship("User", back_populates="organization")
-    url = Column(String, nullable=True)
-
-    def __repr__(self) -> str:
-        return f"Organization(name={self.name})"
-
-
-class Institution(Base):
-    __tablename__ = "institution_tab"
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False)
-    created_on = Column(DateTime, nullable=False)
-    contact_number: Column[String] = Column(String(255), nullable=True)
-
-    notes: Column[TEXT] = Column(TEXT, nullable=True)
-    clinician_id: Column[Integer] = Column(
-        Integer, ForeignKey("clinician_tab.registration_id"), nullable=True
-    )
-
-
-    def __repr__(self) -> str:
-        return f"Institution(id={self.id}, name={self.name})"
-
-
-class User(Base):
-    __tablename__ = "user_tab"
-    __allow_unmapped__ = True
-
-
-    id: int = Column(Integer, Identity(always=True), primary_key=True)
-    username: str = Column(String, nullable=False, unique=True)
-    email: str = Column(String, nullable=False, unique=True)
-    pword_hash: str = Column(String, nullable=False)
-    firstname: str | None = Column(String, nullable=True)
-    lastname: str | None = Column(String, nullable=True)
-    can_edit: bool = Column(
-        Boolean, default=False, server_default="false", nullable=False
-    )
-    organization_id = Column(Integer, ForeignKey("organization_tab.id"), nullable=True)
-    organization: "Organization" = relationship(
-        "Organization", lazy="joined", uselist=False, back_populates="users")
-    def __repr__(self) -> str:
-        return f"User(email={self.email}, organization={self.organization_id})"
-
-
-class Contact(Base):
-    """
-    Table representing an email contact for an institution.
-    """
-
-    __tablename__ = "contact_tab"
-    contact = Column(TEXT, primary_key=True)
-    contact_name = Column(TEXT, nullable=False)
-
-    institution_id = Column(Integer, ForeignKey("institution_tab.id"), primary_key=True)
+    created_on: Column[datetime] = Column(DateTime, nullable=False)
+    updated_on: Column[datetime] = Column(DateTime, nullable=False)
+    rating: Column[float] = Column(DOUBLE_PRECISION, nullable=True)
+    online_consultation: Column[bool] = Column(Boolean, nullable=True)
+    online_consultation_fee: Column[float] = Column(DOUBLE_PRECISION, nullable=True)
+    online_consultation_duration: Column[int] = Column(SmallInteger, nullable=True)

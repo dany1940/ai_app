@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException, status
-from  app.dependencies import get_db
 
 import app.schemas
 from app import models
@@ -32,3 +31,4 @@ def post_clinician(
     )
 
     database.add(new_clinician)
+    database.commit()

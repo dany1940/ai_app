@@ -5,9 +5,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError  # type: ignore
 from jose import jwt  # type: ignore
 
-from app.conf import config
 from app import models, schemas
 from app.commons import Token, UserAuthorisation
+from app.conf import config
 from app.dependencies import CurrentUser, Database, authenticate_user
 from app.security import (create_access_token, create_refresh_token,
                           refresh_token_valid, revoke_refresh_token)
@@ -99,9 +99,7 @@ def refresh_access_token(
         "token_type": "bearer",
         "expires_in": config.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
         "role": (
-            UserAuthorisation.ADMIN
-            if user.can_edit
-            else schemas.UserAuthorisation.USER
+            UserAuthorisation.ADMIN if user.can_edit else schemas.UserAuthorisation.USER
         ),
     }
 

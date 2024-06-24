@@ -21,4 +21,3 @@ class Config:
 
 
 config = Config()
-

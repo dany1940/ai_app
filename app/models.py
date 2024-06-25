@@ -13,7 +13,6 @@ from sqlalchemy.sql.sqltypes import (TEXT, Boolean, Date, DateTime, Enum,
 from sqlalchemy_utils import LtreeType
 from sqlalchemy_utils.types.ltree import LQUERY
 
-from app.commons import Base
 
 from .commons import (BloodGroupType, FormType, GenderType, StatusType,
                       TitleType)
@@ -77,7 +76,12 @@ class Patient(Base):
         default=TitleType.MR.value,
     )
     is_alcohool_drinker: Column[bool] = Column(Boolean, nullable=False)
-    institution_number: Column[str] = Column(Integer, ForeignKey("institution_tab.id"))
+    institution_id: Column[Integer] = Column(
+        Integer, ForeignKey("institution_tab.id"), nullable=True
+    )
+    institution = relationship("Institution", back_populates="patient")
+    prescription = relationship("Prescription", back_populates="patient")
+
 
 
 class Image(Base):
@@ -86,7 +90,33 @@ class Image(Base):
     image_id = mapped_column(Integer, Identity(always=True), primary_key=True)
     link = Column(String, nullable=False)
     created_on = Column(DateTime(timezone=False), nullable=False)
+    medication = relationship("Medication", back_populates="image")
 
+class Clinician(Base):
+    __tablename__ = "clinician_tab"
+    """Table for clinician columns"""
+
+    registration_id: Column[int] = Column(Integer, primary_key=True, autoincrement=True)
+    gmc_number: Column[str] = Column(String, nullable=False)
+    first_name: Column[str] = Column(String, nullable=False)
+    last_name: Column[str] = Column(String, nullable=False)
+    mobile_number: Column[str] = Column(String, nullable=False)
+    email: Column[str] = Column(String, nullable=False)
+    password: Column[str] = Column(String, nullable=False)
+    mc_number: Column[str] = Column(String, nullable=False)
+    address: Column[str] = Column(String, nullable=False)
+    about: Column[str] = Column(TEXT, nullable=True)
+    institution_id: Column[Integer] = Column(
+        Integer, ForeignKey("institution_tab.id"), nullable=True
+    )
+    institution = relationship("Institution", back_populates="clinician")
+    created_on: Column[datetime] = Column(DateTime, nullable=False)
+    updated_on: Column[datetime] = Column(DateTime, nullable=False)
+    rating: Column[float] = Column(DOUBLE_PRECISION, nullable=True)
+    online_consultation: Column[bool] = Column(Boolean, nullable=True)
+    online_consultation_fee: Column[float] = Column(DOUBLE_PRECISION, nullable=True)
+    online_consultation_duration: Column[int] = Column(SmallInteger, nullable=True)
+    prescription = relationship("Prescription", back_populates="clinician")
 
 class Institution(Base):
     __tablename__ = "institution_tab"
@@ -98,14 +128,10 @@ class Institution(Base):
     organization_id: Column[Integer] = Column(
         Integer, ForeignKey("organization_tab.id"), nullable=True
     )
+    patient = relationship("Patient", back_populates="institution")
+    clinician = relationship("Clinician", back_populates="institution")
     organisation = relationship("Organization", back_populates="institution")
-    registration_id: Column[Integer] = Column(
-        Integer, ForeignKey("clinician_tab.registration_id"), nullable=True
-    )
-    clinician: Mapped[list["Clinician"]] = relationship(
-        "Clinician",
-        lazy="joined",
-    )
+    users = relationship("User", back_populates="institution")
     notes: Column[TEXT] = Column(TEXT, nullable=True)
 
     def __repr__(self) -> str:
@@ -143,6 +169,7 @@ class Organization(Base):
     url = Column(String, nullable=True)
     path = Column(LtreeType, nullable=False)
 
+
     @hybrid_property
     def children(self) -> list["Organization"]:
         session = object_session(self)
@@ -178,6 +205,10 @@ class User(Base):
         Boolean, default=False, server_default="false", nullable=False
     )
     organization_id = Column(Integer, ForeignKey("organization_tab.id"), nullable=True)
+    institution_id = Column(Integer, ForeignKey("institution_tab.id"), nullable=True)
+    institution: "Organization" = relationship(
+        "Institution", lazy="joined", uselist=False, back_populates="users"
+    )
     organization: "Organization" = relationship(
         "Organization", lazy="joined", uselist=False, back_populates="users"
     )
@@ -189,6 +220,7 @@ class User(Base):
 class Medication(Base):
     __tablename__ = "medication_tab"
     """"table holding the Medication Columns"""
+    medication_name: Column[str] = Column(String, nullable=False)
     medication_reference: Column[str] = Column(String, primary_key=True)
     code_name: Column[str] = Column(String, nullable=False)
     international_code_name: Column[str | None] = Column(String, nullable=True)  # type: ignore
@@ -204,47 +236,51 @@ class Medication(Base):
         default=FormType.CAPSULE.value,
         server_default=FormType.CAPSULE.value,
     )  # type: ignore
-    brand_name: Column[str] = Column(String, nullable=False)
-    active_ingredient_name: Column[str] = Column(String, nullable=False)
-    excipient_name: Column[str] = Column(String, nullable=False)
-    other_name_of_active_ingredient: Column[str] = Column(String, nullable=False)
-    abbreviated_name_of_active_ingredient: Column[str] = Column(String, nullable=False)
-    abbreviated_name_of_active_ingredient: Column[str] = Column(String, nullable=False)
-    chemical_formula: Column[str] = Column(String, nullable=False)
-    peculiar_part_of_drug: Column[str] = Column(String, nullable=False)
-    color: Column[str] = Column(String, nullable=False)
-    smell: Column[str] = Column(String, nullable=False)
-    taste: Column[str] = Column(String, nullable=False)
-    usage_of_excipient: Column[str] = Column(String, nullable=False)
-    indications: Column[str] = Column(String, nullable=False)
-    contraindications: Column[str] = Column(String, nullable=False)
-    is_allowed_for_children: Column[bool] = Column(Boolean, nullable=False)
-    medication_category: Column[str] = Column(String, nullable=False)
-    medication_sub_category: Column[str] = Column(String, nullable=False)
-    medication_type: Column[str] = Column(String, nullable=False)
-    frequency: Column[int] = Column(SmallInteger, nullable=False)
-    dosage: Column[str] = Column(String, nullable=False)
-    side_effects: Column[str] = Column(String, nullable=False)
-    storage: Column[str] = Column(String, nullable=False)
+    brand_name: Column[str] = Column(String, nullable=True)
+    active_ingredient_name: Column[str] = Column(String, nullable=True)
+    excipient_name: Column[str] = Column(String, nullable=True)
+    other_name_of_active_ingredient: Column[str] = Column(String, nullable=True)
+    abbreviated_name_of_active_ingredient: Column[str] = Column(String, nullable=True)
+    abbreviated_name_of_active_ingredient: Column[str] = Column(String, nullable=True)
+    chemical_formula: Column[str] = Column(String, nullable=True)
+    peculiar_part_of_drug: Column[str] = Column(String, nullable=True)
+    color: Column[str] = Column(String, nullable=True)
+    smell: Column[str] = Column(String, nullable=True)
+    taste: Column[str] = Column(String, nullable=True)
+    usage_of_excipient: Column[str] = Column(String, nullable=True)
+    indications: Column[str] = Column(String, nullable=True)
+    contraindications: Column[str] = Column(String, nullable=True)
+    is_allowed_for_children: Column[bool] = Column(Boolean, nullable=True)
+    medication_category: Column[str] = Column(String, nullable=True)
+    medication_sub_category: Column[str] = Column(String, nullable=True)
+    medication_type: Column[str] = Column(String, nullable=True)
+    frequency: Column[int] = Column(SmallInteger, nullable=True)
+    dosage: Column[str] = Column(String, nullable=True)
+    side_effects: Column[str] = Column(String, nullable=True)
+    storage: Column[str] = Column(String, nullable=True)
     medication_image: Column[int] = Column(Integer, ForeignKey("image_tab.image_id"))
-    image = relationship("Image", uselist=False)
-    is_fda_approved: Column[bool] = Column(Boolean, nullable=False)
-    is_nhs_approved: Column[bool] = Column(Boolean, nullable=False)
-    is_emergency_medicine: Column[bool] = Column(Boolean, nullable=False)
-    is_controlled_drug: Column[bool] = Column(Boolean, nullable=False)
-    is_generic: Column[bool] = Column(Boolean, nullable=False)
-    is_over_the_counter: Column[bool] = Column(Boolean, nullable=False)
-    is_herbal: Column[bool] = Column(Boolean, nullable=False)
-    is_homeopathic: Column[bool] = Column(Boolean, nullable=False)
-    is_banned: Column[bool] = Column(Boolean, nullable=False)
-    is_restricted: Column[bool] = Column(Boolean, nullable=False)
-    is_unlicensed: Column[bool] = Column(Boolean, nullable=False)
-    is_orphan_drug: Column[bool] = Column(Boolean, nullable=False)
-    is_biological: Column[bool] = Column(Boolean, nullable=False)
-    is_trial_drug: Column[bool] = Column(Boolean, nullable=False)
-    is_medical_gas: Column[bool] = Column(Boolean, nullable=False)
-    is_medical_radioisotope: Column[bool] = Column(Boolean, nullable=False)
-    is_medical_radioactive: Column[bool] = Column(Boolean, nullable=False)
+    image = relationship("Image", uselist=True, back_populates="medication")
+    is_fda_approved: Column[bool] = Column(Boolean, nullable=True)
+    is_nhs_approved: Column[bool] = Column(Boolean, nullable=True)
+    is_emergency_medicine: Column[bool] = Column(Boolean, nullable=True)
+    is_controlled_drug: Column[bool] = Column(Boolean, nullable=True)
+    is_generic: Column[bool] = Column(Boolean, nullable=True)
+    is_over_the_counter: Column[bool] = Column(Boolean, nullable=True)
+    is_herbal: Column[bool] = Column(Boolean, nullable=True)
+    is_homeopathic: Column[bool] = Column(Boolean, nullable=True)
+    is_banned: Column[bool] = Column(Boolean, nullable=True)
+    is_restricted: Column[bool] = Column(Boolean, nullable=True)
+    is_unlicensed: Column[bool] = Column(Boolean, nullable=True)
+    is_orphan_drug: Column[bool] = Column(Boolean, nullable=True)
+    is_biological: Column[bool] = Column(Boolean, nullable=True)
+    is_trial_drug: Column[bool] = Column(Boolean, nullable=True)
+    is_medical_gas: Column[bool] = Column(Boolean, nullable=True)
+    is_medical_radioisotope: Column[bool] = Column(Boolean, nullable=True)
+    is_medical_radioactive: Column[bool] = Column(Boolean, nullable=True)
+    prescription_refrence: Column[int] = Column(
+        Integer, ForeignKey("prescription_tab.prescription_id")
+    )
+    prescription = relationship("Prescription", back_populates="medication")
 
 
 class MedicationRequest(Base):
@@ -274,27 +310,32 @@ class MedicationRequest(Base):
         server_default=StatusType.ACTIVE.value,
     )  # type: ignore
 
-
-class Clinician(Base):
-    __tablename__ = "clinician_tab"
-    """Table for clinician columns"""
-
-    registration_id: Column[int] = Column(Integer, primary_key=True, autoincrement=True)
-    gmc_number: Column[str] = Column(String, nullable=False)
-    first_name: Column[str] = Column(String, nullable=False)
-    last_name: Column[str] = Column(String, nullable=False)
-    mobile_number: Column[str] = Column(String, nullable=False)
-    email: Column[str] = Column(String, nullable=False)
-    password: Column[str] = Column(String, nullable=False)
-    mc_number: Column[str] = Column(String, nullable=False)
-    address: Column[str] = Column(String, nullable=False)
-    about: Column[str] = Column(TEXT, nullable=True)
-    institution: Mapped[Institution] = relationship(
-        "Institution", lazy="joined", overlaps="clinician"
+class Prescription(Base):
+    __tablename__ = "prescription_tab"
+    """Table holding the Prescription columns"""
+    prescription_id: Column[str] = Column(Integer, Identity(always=True),primary_key=True)
+    clinician_refrence: Column[int] = Column(
+        Integer, ForeignKey("clinician_tab.registration_id")
     )
-    created_on: Column[datetime] = Column(DateTime, nullable=False)
-    updated_on: Column[datetime] = Column(DateTime, nullable=False)
-    rating: Column[float] = Column(DOUBLE_PRECISION, nullable=True)
-    online_consultation: Column[bool] = Column(Boolean, nullable=True)
-    online_consultation_fee: Column[float] = Column(DOUBLE_PRECISION, nullable=True)
-    online_consultation_duration: Column[int] = Column(SmallInteger, nullable=True)
+    patient_refrence: Column[int] = Column(
+        Integer, ForeignKey("patient_tab.registration_id")
+    )
+    clinician = relationship("Clinician", back_populates="prescription")
+    patient = relationship("Patient", back_populates="prescription")
+    reason: Column[date | None] = Column(TEXT, nullable=True)  # type: ignore
+    prescription_date: Column[datetime] = Column(DateTime, nullable=False)
+    start_date: Column[datetime] = Column(DateTime, nullable=False)
+    end_date: Column[datetime | None] = Column(DateTime, nullable=True)  # type: ignore
+    frequency: Column[int] = Column(SmallInteger, nullable=False)
+    status: Never = Column(
+        Enum(
+            StatusType,
+            name="status",
+            validate_strings=True,
+            native_enum=True,
+        ),
+        nullable=False,
+        default=StatusType.ACTIVE.value,
+        server_default=StatusType.ACTIVE.value,
+    )  # type: ignore
+    medication = relationship("Medication", back_populates="prescription")

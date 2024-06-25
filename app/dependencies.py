@@ -1,16 +1,17 @@
-from typing import Annotated, cast
-
+from typing import Annotated, cast, Literal
+from datetime import date
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from sqlalchemy import and_, create_engine, or_, select
+from sqlalchemy import and_, create_engine, select
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, joinedload
-
+from pydantic import validator
 from app import models, schemas
 from app.conf import config
 from app.security import verify_password
+from app.commons import FormType
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
@@ -41,19 +42,30 @@ Database = Annotated[Session, Depends(get_db)]
 
 def get_patient(
     database: Database,
-    patient: schemas.PatientCreate,
+    first_name: str,
+    last_name: str,
+    date_of_birth: str,
 ) -> models.Patient | None:
     """
     Get a  patient from database
     """
+    @validator("date_of_birth")
+    def is_date_in_range(is_valid):
+        if (
+            not date(year=1900, month=1, day=1)
+            <= is_valid
+            < date(year=2024, month=1, day=1)
+        ):
+            raise ValueError("Birth date must be in range")
+        else:
 
-    return (
-        database.execute(
+           return (
+            database.execute(
             select(models.Patient).where(
                 and_(
-                    models.Patient.first_name == patient.first_name,
-                    models.Patient.last_name == patient.last_name,
-                    models.Patient.date_of_birth == patient.date_of_birth,
+                    models.Patient.first_name == first_name,
+                    models.Patient.last_name == last_name,
+                    models.Patient.date_of_birth == date_of_birth,
                 )
             )
         )
@@ -64,7 +76,9 @@ def get_patient(
 
 def get_clinician(
     database: Database,
-    clinician: schemas.ClinicianCreate,
+    first_name: str,
+    last_name: str,
+    email: str,
 ) -> models.Clinician | None:
     """
     Get a  clinician from database
@@ -74,9 +88,9 @@ def get_clinician(
         database.execute(
             select(models.Clinician).where(
                 and_(
-                    models.Clinician.first_name == clinician.first_name,
-                    models.Clinician.last_name == clinician.last_name,
-                    models.Clinician.registration_id == clinician.registration_id,
+                    models.Clinician.first_name == first_name,
+                    models.Clinician.last_name == last_name,
+                    models.Clinician.email == email,
                 )
             )
         )
@@ -86,7 +100,10 @@ def get_clinician(
 
 
 def get_medication(
-    database: Database, medication: schemas.MedicationCreate
+    database: Database,
+    brand_name: str,
+    medication_name: str,
+    form: object = Literal[FormType.POWDER.value],
 ) -> models.Medication | None:
     """
     Get a  patient from database
@@ -95,10 +112,10 @@ def get_medication(
     return (
         database.execute(
             select(models.Medication).where(
-                or_(
-                    models.Medication.medication_reference
-                    == medication.medication_reference,
-                    models.Medication.code_name == medication.code_name,
+                and_(
+                    models.Medication.medication_name == medication_name,
+                    models.Medication.brand_name == brand_name,
+                    models.Medication.form == form,
                 )
             )
         )

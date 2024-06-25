@@ -9,10 +9,6 @@ class GenderType(enum.Enum):
     MALE = "MALE"
     FEMALE = "FEMALE"
 
-    PSI = "PSI"
-    BAR = "BAR"
-    KPA = "KPA"
-
 
 class FormType(enum.Enum):
     POWDER = "POWDER"

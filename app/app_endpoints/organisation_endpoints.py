@@ -21,7 +21,6 @@ def create_organization(
     organization_name: str,
     organization_fields: OrganizationCreate,
     database: Database,
-    dependencies=CurrentAdminUser,
 ):
     """
     Create a new organization.
@@ -32,7 +31,6 @@ def create_organization(
             models.Organization.name == organization_fields.parent
         )
     ).scalar_one_or_none()
-
     try:
         organization_id = database.execute(
             insert(models.Organization)
@@ -43,14 +41,13 @@ def create_organization(
                 # "<parent_organization.path>.<organization_id>" in order to
                 # achieve this, we insert the organization with a placeholder
                 # path of "1", and then update it with the correct path
-                path=Ltree("1"),
+                path=Ltree("A"),
                 **organization_fields.model_dump(exclude={"parent"}, mode="json"),
             )
             .returning(models.Organization.id)
         ).scalar_one_or_none()
     except IntegrityError as error:
-        # The only (famous last words) error that can occur here is a 409 (Conflict)
-        # since the address, email, etc. have already been validated by pydantic
+        # The error that can occur here is a 409 (Conflict)
         # and the only UNIQUE field on this table is "name".
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -60,6 +57,6 @@ def create_organization(
     database.execute(
         update(models.Organization)
         .where(models.Organization.id == organization_id)
-        .values(path=Ltree(f"{parent_organization_path or '1'}.{organization_id}"))
+        .values(path=Ltree(f"{parent_organization_path or 'A'}.{organization_id}"))
     )
     database.commit()

@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 
 import app.schemas
 from app import models
-from app.dependencies import Database, Medication
+from app.dependencies import Database, Medication, CurrentUser
 
 router = APIRouter(
     prefix="/medication",
@@ -14,7 +14,9 @@ router = APIRouter(
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=None)
 def post_medication(
     medication: app.schemas.MedicationCreate,
+    medication_name: str,
     database: Database,
+    user: CurrentUser,
     existing_medication: Medication,
 ) -> None:
     """
@@ -27,7 +29,13 @@ def post_medication(
         )
 
     new_medication = models.Medication(
-        **medication.model_dump(),
+        medication_name=medication_name,
+        **medication.model_dump(exclude={"medication_name"}),
     )
     database.add(new_medication)
     database.commit()
+
+
+
+
+

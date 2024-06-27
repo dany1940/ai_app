@@ -16,33 +16,14 @@ router = APIRouter(
 )
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=None)
+@router.post("/{clinician_code}", status_code=status.HTTP_201_CREATED, response_model=None)
 def post_clinician(
     fields: app.schemas.ClinicianCreate,
     database: Database,
+    clinician_code: str,
     existing_clinician: Clinician,
     user: CurrentUser,
-    email: str,
-    first_name: Annotated[
-        str,
-        Field(
-            title="Person first name",
-            min_length=2,
-            max_length=25,
-            pattern=r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$",
-            default="MARIA",
-        ),
-    ],
-    last_name: Annotated[
-        str,
-        Field(
-            title="person last name",
-            min_length=2,
-            max_length=25,
-            pattern=r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$",
-            default="DOE",
-        ),
-    ],
+
 ) -> None:
     """
     Create a new Clinician in DB
@@ -58,15 +39,13 @@ def post_clinician(
                 select(models.Institution.id)
                 .where(models.Institution.name == fields.institution_name)
             ).scalar_one_or_none(),
-            error_msg="No organization could be found with that name",
+            error_msg="No institution could be found with that name",
         )
     else:
         institution_id = cast(int, user.institution_id)
     new_clinician = models.Clinician(
         institution_id=institution_id,
-        first_name=first_name,
-        last_name=last_name,
-        email=email,
+        clinician_code=clinician_code,
         created_on=datetime.now(timezone.utc),
         updated_on=datetime.now(timezone.utc),
         **fields.model_dump(exclude={"institution_name"}),

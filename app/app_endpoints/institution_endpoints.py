@@ -15,10 +15,10 @@ router = APIRouter(
 )
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=None)
+@router.post("/{institution_name}", status_code=status.HTTP_201_CREATED, response_model=None)
 def post_institution(
     fields: InstitutionCreate,
-    name: str,
+    institution_name: str,
     database: Database,
     user: CurrentUser,
     existing_institution: Institution,
@@ -31,24 +31,24 @@ def post_institution(
 
     if existing_institution:
         raise HTTPException(
-            409, detail="There is already a clinician with this credentials"
+            409, detail="There is already an institution with this credentials"
         )
-    if fields.institution_name:
-        institution_id: int = expect(
+    if fields.organization_name:
+        organization_id: int = expect(
             database.execute(
-                select(models.Institution.id)
-                .where(models.Institution.name == fields.institution_name)
+                select(models.Organization.id)
+                .where(models.Organization.name == fields.organization_name)
             ).scalar_one_or_none(),
             error_msg="No organization could be found with that name",
         )
     else:
-        institution_id = cast(int, user.institution_id)
+        organization_id = cast(int, user.organization_id)
 
     new_institution = models.Institution(
-        institution_id=institution_id,
-        name=name,
+        organization_id=organization_id,
+        name=institution_name,
         created_on=datetime.now(timezone.utc),
-        **fields.model_dump(exclude={"institution_name"}),
+        **fields.model_dump(exclude={"institution_name", "organization_name"}),
 
     )
     database.add(new_institution)

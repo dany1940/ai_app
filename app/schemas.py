@@ -6,7 +6,7 @@ from pydantic import (BaseModel, ConfigDict, EmailStr, Field, PositiveInt,
 from typing_extensions import Annotated
 
 from app.commons import (BloodGroupType, FormType, GenderType, StatusType,
-                         TitleType)
+                         TitleType, PrescriptionStatusType)
 
 
 class Person(BaseModel):
@@ -88,7 +88,35 @@ class PatientCreate(BaseModel):
 
     __pydantic_config__ = ConfigDict(use_enum_values=True)
 
-
+    first_name: Annotated[
+        str,
+        Field(
+            title="Person first name",
+            min_length=2,
+            max_length=25,
+            pattern=r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$",
+            default="MARIA",
+        ),
+    ]
+    last_name: Annotated[
+        str,
+        Field(
+            title="person last name",
+            min_length=2,
+            max_length=25,
+            pattern=r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$",
+            default="DOE",
+        ),
+    ]
+    date_of_birth: Annotated[
+        datetime,
+        Field(
+            title="Date of birth",
+            description="The date of birth of the patient",
+            example="2021-08-31",
+            default_factory=datetime.now,
+        ),
+    ]
     address: Annotated[
         str,
         Field(
@@ -102,9 +130,6 @@ class PatientCreate(BaseModel):
 
 
     gender: object = Literal[GenderType.FEMALE.value]
-
-
-
     is_smoker: bool | None = None
     is_active: bool | None = None
     is_armed_forces: bool | None = None
@@ -120,8 +145,7 @@ class PatientCreate(BaseModel):
     title: TitleType | None = None
     is_alcohool_drinker: bool | None = None
     institution_name: str
-    clinician_first_name: str
-    clinician_last_name: str
+    clinician_code: str
 
 
 class Image(BaseModel):
@@ -175,7 +199,27 @@ class ClinicianCreate(BaseModel):
             default="1234 Main St",
         ),
     ] | None = None
-
+    email: str
+    first_name: Annotated[
+        str,
+        Field(
+            title="Person first name",
+            min_length=2,
+            max_length=25,
+            pattern=r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$",
+            default="MARIA",
+        ),
+    ]
+    last_name: Annotated[
+        str,
+        Field(
+            title="person last name",
+            min_length=2,
+            max_length=25,
+            pattern=r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$",
+            default="DOE",
+        ),
+    ]
     gmc_number: str | None = None
     mc_number: str | None = None
     password: str  | None = None
@@ -189,7 +233,7 @@ class ClinicianCreate(BaseModel):
 
 
 class Medication(BaseModel):
-    __pydantic_config__ = ConfigDict(use_enum_values=True, extra="forbid")
+    model_config = ConfigDict(from_attributes=True)
 
     medication_reference: Annotated[
         str, Field(min_length=2, max_length=25, pattern=r"[0-9]"), "Medications Code"
@@ -395,15 +439,62 @@ class Prescription(BaseModel):
     start_date: datetime
     end_date: Optional[datetime] = None
     frequency: int
-    status: object = Literal[StatusType.ACTIVE.value]
+    prescription_status: object = Literal[PrescriptionStatusType.ACTIVE.value]
+
 
 
 class PrescriptionCreate(BaseModel):
+    reason: str
+    start_date: datetime
+    end_date: Optional[datetime] = None
+    frequency: int
+    prescription_status: object = Literal[PrescriptionStatusType.ACTIVE.value]
+
+
+class Apointments(BaseModel):
+    reason: str
+    apointment_date: datetime
+
+
+
+
+class ApointmentsCreate(BaseModel):
+    reason: str
+    apointment_date: datetime
+
+
+
+class ClinicalTrial(BaseModel):
+    reason: str
+
+
+
+
+class ClinicalTrialCreate(BaseModel):
+    reason: str
+
+class GetClinician(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    first_name: str
+    last_name: str
+    email: str
+class GetMedication(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    code_name: str
+    form: object = Literal[FormType.POWDER.value]
+    indications: str
+    dosage: str
+
+class GetPrescription(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     reason: str
     prescription_date: datetime
     start_date: datetime
     end_date: Optional[datetime] = None
     frequency: int
-
-
-
+    prescription_status: object = Literal[PrescriptionStatusType.ACTIVE.value]
+    clinician: GetClinician
+    medication: GetMedication

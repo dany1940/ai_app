@@ -11,10 +11,11 @@ router = APIRouter(
 )
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=None)
+@router.post("/{medication_name}", status_code=status.HTTP_201_CREATED, response_model=None)
 def post_medication(
     medication: app.schemas.MedicationCreate,
     medication_name: str,
+    form: str,
     database: Database,
     user: CurrentUser,
     existing_medication: Medication,
@@ -30,6 +31,7 @@ def post_medication(
 
     new_medication = models.Medication(
         medication_name=medication_name,
+        form=form,
         **medication.model_dump(exclude={"medication_name"}),
     )
     database.add(new_medication)

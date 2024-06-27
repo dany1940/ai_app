@@ -6,9 +6,9 @@ from app.app_endpoints.health_endpoints import is_database_online
 from .app_endpoints import (auth_endpoints, clinician_endpoints,
                             contact_endpoints, health_endpoints,
                             image_endpoints, institution_endpoints,
-                            medication_enpoints, medication_request_endpoints,
+                            medication_enpoints,
                             organisation_endpoints, patient_endpoints,
-                            user_endpoints)
+                            user_endpoints, prescription_endpoints, apointments_endpoints, clinical_trials_endpoints)
 
 app = FastAPI(title="Medical Api", docs_url="/docs", version="0.0.1")
 
@@ -19,11 +19,15 @@ routers = [
     contact_endpoints.router,
     image_endpoints.router,
     medication_enpoints.router,
-    medication_request_endpoints.router,
     organisation_endpoints.router,
     institution_endpoints.router,
     patient_endpoints.router,
     user_endpoints.router,
+    prescription_endpoints.router,
+    apointments_endpoints.router,
+    clinical_trials_endpoints.router
+
+
 ]
 for router in routers:
     app.include_router(router)

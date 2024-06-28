@@ -289,9 +289,6 @@ class Medication(Base):
     is_medical_gas: Column[bool] = Column(Boolean, nullable=True)
     is_medical_radioisotope: Column[bool] = Column(Boolean, nullable=True)
     is_medical_radioactive: Column[bool] = Column(Boolean, nullable=True)
-    prescription_refrence: Column[int] = Column(
-        Integer, ForeignKey("prescription_tab.prescription_id")
-    )
     prescription = relationship("Prescription", back_populates="medication")
 
 
@@ -328,8 +325,9 @@ class Prescription(Base):
         server_default=PrescriptionStatusType.ACTIVE.value,
     )  # type: ignore
     medication = relationship("Medication", back_populates="prescription")
+    medication_refrence = Column(String, ForeignKey("medication_tab.medication_reference"))
     medication_json =  Column(MutableDict.as_mutable(JSONB), nullable=True)
-    
+
 
 
 

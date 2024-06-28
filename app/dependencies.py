@@ -82,9 +82,7 @@ def get_clinician(
 
 def get_medication(
     database: Database,
-    brand_name: str,
-    medication_name: str,
-    form: object = Literal[FormType.POWDER.value],
+    medication_code: str,
 ) -> models.Medication | None:
     """
     Get a  patient from database
@@ -94,9 +92,7 @@ def get_medication(
         database.execute(
             select(models.Medication).where(
                 and_(
-                    models.Medication.medication_name == medication_name,
-                    models.Medication.brand_name == brand_name,
-                    models.Medication.form == form,
+                    models.Medication.code_name == medication_code,
                 )
             )
         )

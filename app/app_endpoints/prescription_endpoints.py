@@ -1,15 +1,17 @@
 from fastapi import APIRouter, HTTPException, status
 import app.schemas
 import zoneinfo
+from datetime import datetime
 from app import models
 from app.dependencies import Database, Prescription,  Patient, Clinician
-from datetime import datetime
 from datetime import timezone, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import load_only
-from app.commons import StatusType
+from app.commons import PrescriptionStatusType
 from fastapi import Query
 from sqlalchemy import orm
+
+
 
 
 router = APIRouter(
@@ -75,11 +77,10 @@ def post_prescription(
     database.add(new_prescription)
     database.commit()
 
-
 @router.get("/", status_code=status.HTTP_200_OK, response_model=list[app.schemas.GetPrescription])
 async def get_medication_prescription_for_a_patient(
     database: Database,
-    status_: StatusType | None = Query(
+    status_: PrescriptionStatusType | None = Query(
         default=None,
         description="Filter a medication by it's status",
     ),
@@ -130,18 +131,30 @@ async def get_medication_prescription_for_a_patient(
         )
 
     if status_ is not None:
-        filters.append(models.MedicationRequest.status == status_)
+        filters.append(models.Prescription.prescription_status == status_)
 
     return(
         database.execute(
             select(
-                models.Prescription,
+                models.Prescription.reason,
+                models.Prescription.created_on.label("prescription_date"),
+                models.Prescription.start_date,
+                models.Prescription.end_date,
+                models.Prescription.frequency,
+                models.Prescription.prescription_status,
+                models.Prescription.medication_json,
+                models.Prescription.prescription_code,
+                models.Prescription.patient_refrence,
+                models.Clinician.first_name.label("clinician_first_name"),
+                models.Clinician.last_name.label("clinician_last_name"),
+                models.Clinician.email.label("clinician_email"),
+
             )
-            .options(orm.joinedload(models.Prescription.clinician))
-            .options(orm.joinedload(models.Prescription.patient))
+            .join(models.Clinician, models.Prescription.clinician_refrence == models.Clinician.registration_id)
+            .join(models.Patient, models.Prescription.patient_refrence == models.Patient.registration_id)
+            .filter(*filters)
         )
 
-        .scalars()
         .all()
     )
 

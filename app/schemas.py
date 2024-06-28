@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Dict
 
 from pydantic import (BaseModel, ConfigDict, EmailStr, Field, PositiveInt,
                       validator)
@@ -474,27 +474,28 @@ class ClinicalTrialCreate(BaseModel):
     reason: str
 
 class GetClinician(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
 
-    first_name: str
-    last_name: str
-    email: str
+    first_name: str | None = None
+    last_name: str | None = None
+    email: str | None = None
+
 class GetMedication(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    code_name: str
-    form: object = Literal[FormType.POWDER.value]
-    indications: str
-    dosage: str
+
 
 class GetPrescription(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    reason: str
-    prescription_date: datetime
-    start_date: datetime
+    reason: str | None = None
+    prescription_date: datetime | None = None
+    prescription_code: str | None = None
+    start_date: datetime | None = None
     end_date: Optional[datetime] = None
-    frequency: int
+    frequency: int | None = None
+    medication_json:  Dict | None = None
     prescription_status: object = Literal[PrescriptionStatusType.ACTIVE.value]
-    clinician: GetClinician
-    medication: GetMedication
+    clinician_first_name: str | None = None
+    clinician_last_name: str | None = None
+    clinician_email: str | None = None
+    patient_refrence: int | None = None

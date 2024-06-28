@@ -26,7 +26,7 @@ class StatusType(enum.Enum):
 class PrescriptionStatusType(enum.Enum):
     ACTIVE = "ACTIVE"
     ON_HOLD = "ON_HOLD"
-    CANCELLED = "CANCCELED"
+    CANCCELED = "CANCCELED"
 
 
 class TitleType(enum.Enum):

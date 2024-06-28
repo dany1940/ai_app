@@ -1,23 +1,26 @@
+from datetime import datetime, timezone
+from typing import Annotated, List, cast
+
 from fastapi import APIRouter, HTTPException, status
+from pydantic import Field
+from sqlalchemy import and_, select
+
 import app.schemas
 from app import models
-from app.dependencies import Database,  CurrentUser, Patient, Institution, Clinician, Apointment
-from datetime import datetime
-from datetime import timezone
+from app.dependencies import (Apointment, Clinician, CurrentUser, Database,
+                              Institution, Patient)
 from app.utils import expect
-from sqlalchemy import select
-from typing import cast, Annotated
-from pydantic import Field
-from sqlalchemy import and_
-from typing import List
 
 router = APIRouter(
-    prefix="/apointments", tags=["apointments"], responses={404: {"description": "Not Found"}}
+    prefix="/apointments",
+    tags=["apointments"],
+    responses={404: {"description": "Not Found"}},
 )
 
 
-
-@router.post("/{apointment_code}", status_code=status.HTTP_201_CREATED, response_model=None)
+@router.post(
+    "/{apointment_code}", status_code=status.HTTP_201_CREATED, response_model=None
+)
 def post_apointments(
     fields: app.schemas.ApointmentsCreate,
     apointment_code: str,
@@ -27,29 +30,20 @@ def post_apointments(
     existing_institution: Institution,
     existing_apointment: Apointment,
     user: CurrentUser,
-
 ):
     """
     Create a new Apointments in DB
     """
 
     if existing_apointment:
-        raise HTTPException(
-            409, detail="There is already an apointment with this code"
-        )
+        raise HTTPException(409, detail="There is already an apointment with this code")
 
     if not existing_patient:
-        raise HTTPException(
-            409, detail="There is no patient with this credentials"
-        )
+        raise HTTPException(409, detail="There is no patient with this credentials")
     if not existing_clinician:
-        raise HTTPException(
-            409, detail="There is no clinician with this credentials"
-        )
+        raise HTTPException(409, detail="There is no clinician with this credentials")
     if not existing_institution:
-        raise HTTPException(
-            409, detail="There is no institution with this credentials"
-        )
+        raise HTTPException(409, detail="There is no institution with this credentials")
 
     new_apointment = models.Apointments(
         institution_refrence=existing_institution.id,
@@ -59,8 +53,6 @@ def post_apointments(
         updated_on=datetime.now(timezone.utc),
         creted_on=datetime.now(timezone.utc),
         **fields.model_dump(exclude={"apointment_code"}),
-
     )
     database.add(new_apointment)
     database.commit()
-

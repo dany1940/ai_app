@@ -1,17 +1,12 @@
 from typing import TypeVar
 
-from fastapi import HTTPException
-from fastapi import status
-
+from fastapi import HTTPException, status
 
 T = TypeVar("T")
 
 
 def scalar(value: list[T]) -> T:
     return value[0]
-
-
-
 
 
 def expect(
@@ -28,4 +23,3 @@ def expect(
             detail=error_msg,
         )
     return value
-

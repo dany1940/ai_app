@@ -1,12 +1,12 @@
 from datetime import date, datetime
-from typing import List, Literal, Optional, Dict
+from typing import Dict, List, Literal, Optional
 
 from pydantic import (BaseModel, ConfigDict, EmailStr, Field, PositiveInt,
                       validator)
 from typing_extensions import Annotated
 
-from app.commons import (BloodGroupType, FormType, GenderType, StatusType,
-                         TitleType, PrescriptionStatusType)
+from app.commons import (BloodGroupType, FormType, GenderType,
+                         PrescriptionStatusType, StatusType, TitleType)
 
 
 class Person(BaseModel):
@@ -81,8 +81,6 @@ class Patient(Person):
     institution_number: str
 
 
-
-
 class PatientCreate(BaseModel):
     """ "class patien validates birthday"""
 
@@ -117,17 +115,19 @@ class PatientCreate(BaseModel):
             default_factory=datetime.now,
         ),
     ]
-    address: Annotated[
-        str,
-        Field(
-            title="person address",
-            min_length=2,
-            max_length=25,
-            pattern=r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$",
-            default="1234 Main St",
-        ),
-    ] | None = None
-
+    address: (
+        Annotated[
+            str,
+            Field(
+                title="person address",
+                min_length=2,
+                max_length=25,
+                pattern=r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$",
+                default="1234 Main St",
+            ),
+        ]
+        | None
+    ) = None
 
     gender: object = Literal[GenderType.FEMALE.value]
     is_smoker: bool | None = None
@@ -137,10 +137,10 @@ class PatientCreate(BaseModel):
     is_from_abroad: bool | None = None
     is_from_nhs: bool | None = None
     emergency_contact_number: bool | None = None
-    is_donor: bool  | None = None
+    is_donor: bool | None = None
     donor_organ: str | None = None
     is_blood_donor: bool | None = None
-    patient_medical_history: str  | None = None
+    patient_medical_history: str | None = None
     blood_type: BloodGroupType = Literal[BloodGroupType.A_POSITIVE.value]
     title: TitleType | None = None
     is_alcohool_drinker: bool | None = None
@@ -189,16 +189,19 @@ class UserOverview(BaseModel):
 
 
 class ClinicianCreate(BaseModel):
-    address: Annotated[
-        str,
-        Field(
-            title="person address",
-            min_length=2,
-            max_length=25,
-            pattern=r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$",
-            default="1234 Main St",
-        ),
-    ] | None = None
+    address: (
+        Annotated[
+            str,
+            Field(
+                title="person address",
+                min_length=2,
+                max_length=25,
+                pattern=r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$",
+                default="1234 Main St",
+            ),
+        ]
+        | None
+    ) = None
     email: str
     first_name: Annotated[
         str,
@@ -222,13 +225,13 @@ class ClinicianCreate(BaseModel):
     ]
     gmc_number: str | None = None
     mc_number: str | None = None
-    password: str  | None = None
-    about: str      | None = None
-    rating: float   | None = None
+    password: str | None = None
+    about: str | None = None
+    rating: float | None = None
     mobile_number: str | None = None
-    online_consultation: bool   | None = None
-    online_consultation_fee: float  | None = None
-    online_consultation_duration: int  | None = None
+    online_consultation: bool | None = None
+    online_consultation_fee: float | None = None
+    online_consultation_duration: int | None = None
     institution_name: str
 
 
@@ -245,7 +248,7 @@ class Medication(BaseModel):
         str, Field(min_length=2, max_length=25, pattern=r"[A-Z]"), "Code Name"
     ]
     strength_value: PositiveInt | None = None
-    strenght_unit: PositiveInt  |   None = None
+    strenght_unit: PositiveInt | None = None
     form: object = Literal[FormType.POWDER.value]
     brand_name: str | None = None
     active_ingredient_name: str | None = None
@@ -266,7 +269,7 @@ class Medication(BaseModel):
     medication_sub_category: str | None = None
     medication_type: str | None = None
     frequency: int | None = None
-    dosage: str  | None = None
+    dosage: str | None = None
     side_effects: str | None = None
     storage: str | None = None
     medication_image: int | None = None
@@ -283,11 +286,11 @@ class Medication(BaseModel):
     is_restricted: bool | None = None
     is_unlicensed: bool | None = None
     is_orphan_drug: bool | None = None
-    is_biological: bool  | None = None
-    is_trial_drug: bool  | None = None
-    is_medical_gas: bool  | None = None
-    is_medical_radioisotope: bool  | None = None
-    is_medical_radioactive: bool   | None = None
+    is_biological: bool | None = None
+    is_trial_drug: bool | None = None
+    is_medical_gas: bool | None = None
+    is_medical_radioisotope: bool | None = None
+    is_medical_radioactive: bool | None = None
 
 
 class MedicationCreate(BaseModel):
@@ -301,7 +304,6 @@ class MedicationCreate(BaseModel):
     international_code_name: Annotated[
         str, Field(min_length=2, max_length=25, pattern=r"[A-Z]"), "Code Name"
     ]
-
 
 
 class MedicationRequestBase(BaseModel):
@@ -346,6 +348,7 @@ class Institution(InstitutionBase):
     notes: str
     clinician: List[Clinician]
 
+
 class InstitutionCreate(BaseModel):
     contact_number: str | None = None
     organization_name: str | None = None
@@ -366,7 +369,7 @@ class Organization(BaseModel):
 class OrganizationCreate(BaseModel):
     parent: str | None
     email: str | None = None
-    url: str   | None = None
+    url: str | None = None
 
 
 class UserBase(BaseModel):
@@ -442,7 +445,6 @@ class Prescription(BaseModel):
     prescription_status: object = Literal[PrescriptionStatusType.ACTIVE.value]
 
 
-
 class PrescriptionCreate(BaseModel):
     reason: str
     start_date: datetime
@@ -456,22 +458,18 @@ class Apointments(BaseModel):
     apointment_date: datetime
 
 
-
-
 class ApointmentsCreate(BaseModel):
     reason: str
     apointment_date: datetime
-
 
 
 class ClinicalTrial(BaseModel):
     reason: str
 
 
-
-
 class ClinicalTrialCreate(BaseModel):
     reason: str
+
 
 class GetClinician(BaseModel):
 
@@ -479,9 +477,9 @@ class GetClinician(BaseModel):
     last_name: str | None = None
     email: str | None = None
 
+
 class GetMedication(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-
 
 
 class GetPrescription(BaseModel):
@@ -493,7 +491,7 @@ class GetPrescription(BaseModel):
     start_date: datetime | None = None
     end_date: Optional[datetime] = None
     frequency: int | None = None
-    medication_json:  Dict | None = None
+    medication_json: Dict | None = None
     prescription_status: object = Literal[PrescriptionStatusType.ACTIVE.value]
     clinician_first_name: str | None = None
     clinician_last_name: str | None = None

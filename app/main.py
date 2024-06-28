@@ -3,12 +3,13 @@ from fastapi_health import health as api_health
 
 from app.app_endpoints.health_endpoints import is_database_online
 
-from .app_endpoints import (auth_endpoints, clinician_endpoints,
+from .app_endpoints import (apointments_endpoints, auth_endpoints,
+                            clinical_trials_endpoints, clinician_endpoints,
                             contact_endpoints, health_endpoints,
                             image_endpoints, institution_endpoints,
-                            medication_enpoints,
-                            organisation_endpoints, patient_endpoints,
-                            user_endpoints, prescription_endpoints, apointments_endpoints, clinical_trials_endpoints)
+                            medication_enpoints, organisation_endpoints,
+                            patient_endpoints, prescription_endpoints,
+                            user_endpoints)
 
 app = FastAPI(title="Medical Api", docs_url="/docs", version="0.0.1")
 
@@ -25,9 +26,7 @@ routers = [
     user_endpoints.router,
     prescription_endpoints.router,
     apointments_endpoints.router,
-    clinical_trials_endpoints.router
-
-
+    clinical_trials_endpoints.router,
 ]
 for router in routers:
     app.include_router(router)

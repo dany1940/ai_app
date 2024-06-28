@@ -1,12 +1,13 @@
-from fastapi import APIRouter, HTTPException, status
-from app import models
-from app.dependencies import Database, Institution, CurrentUser
-from app.schemas import InstitutionCreate
-from datetime import datetime
-from datetime import timezone
-from app.utils import expect
-from sqlalchemy import select
+from datetime import datetime, timezone
 from typing import cast
+
+from fastapi import APIRouter, HTTPException, status
+from sqlalchemy import select
+
+from app import models
+from app.dependencies import CurrentUser, Database, Institution
+from app.schemas import InstitutionCreate
+from app.utils import expect
 
 router = APIRouter(
     prefix="/institution",
@@ -15,7 +16,9 @@ router = APIRouter(
 )
 
 
-@router.post("/{institution_name}", status_code=status.HTTP_201_CREATED, response_model=None)
+@router.post(
+    "/{institution_name}", status_code=status.HTTP_201_CREATED, response_model=None
+)
 def post_institution(
     fields: InstitutionCreate,
     institution_name: str,
@@ -27,8 +30,6 @@ def post_institution(
     Create a new Institution
     """
 
-
-
     if existing_institution:
         raise HTTPException(
             409, detail="There is already an institution with this credentials"
@@ -36,8 +37,9 @@ def post_institution(
     if fields.organization_name:
         organization_id: int = expect(
             database.execute(
-                select(models.Organization.id)
-                .where(models.Organization.name == fields.organization_name)
+                select(models.Organization.id).where(
+                    models.Organization.name == fields.organization_name
+                )
             ).scalar_one_or_none(),
             error_msg="No organization could be found with that name",
         )
@@ -49,8 +51,6 @@ def post_institution(
         name=institution_name,
         created_on=datetime.now(timezone.utc),
         **fields.model_dump(exclude={"institution_name", "organization_name"}),
-
     )
     database.add(new_institution)
     database.commit()
-

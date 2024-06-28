@@ -1,4 +1,5 @@
-from typing import Annotated, cast, Literal
+from typing import Annotated, Literal, cast
+
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -6,10 +7,11 @@ from jose import JWTError, jwt
 from sqlalchemy import and_, create_engine, select
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, joinedload
+
 from app import models, schemas
+from app.commons import FormType
 from app.conf import config
 from app.security import verify_password
-from app.commons import FormType
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
@@ -129,7 +131,6 @@ def get_clinician_by_id(
         .unique()
         .scalar_one_or_none()
     )
-
 
 
 def get_contact(
@@ -286,7 +287,7 @@ CurrentSuperUser = Annotated[models.User, Depends(get_current_super_user)]
 
 
 def get_institution(
-    database: Database, institution_name: str,  user: CurrentUser
+    database: Database, institution_name: str, user: CurrentUser
 ) -> models.Institution | None:
     """
     Get a  institution from database
@@ -307,46 +308,49 @@ def get_institution(
         .unique()
         .scalar_one_or_none()
     )
+
+
 Patient = Annotated[models.Patient, Depends(get_patient_by_code)]
 Clinician = Annotated[models.Clinician, Depends(get_clinician)]
 
-def get_prescription(
-  database: Database,
-  prescription_code: str,
-  user: CurrentUser,
 
+def get_prescription(
+    database: Database,
+    prescription_code: str,
+    user: CurrentUser,
 ) -> models.Prescription | None:
     """
     Get a  prescription from database
     """
     return (
-            database.execute(
-            select(models.Prescription.prescription_code)
-
-        .where(
-            models.Prescription.prescription_code == prescription_code
-        )
+        database.execute(
+            select(models.Prescription.prescription_code).where(
+                models.Prescription.prescription_code == prescription_code
             )
+        )
         .unique()
         .scalar_one_or_none()
-
     )
+
 
 Institution = Annotated[models.Institution, Depends(get_institution)]
 
-def get_apointment(
-  database: Database,
-  apointment_code: str,
-  user: CurrentUser,
 
+def get_apointment(
+    database: Database,
+    apointment_code: str,
+    user: CurrentUser,
 ) -> models.Apointments | None:
     """
     Get a  prescription from database
     """
     return (
-            database.execute(
+        database.execute(
             select(models.Apointments)
-            .join(models.Institution, models.Institution.id == models.Apointments.institution_refrence)
+            .join(
+                models.Institution,
+                models.Institution.id == models.Apointments.institution_refrence,
+            )
             .where(models.Apointments.apointment_code == apointment_code)
             .where(
                 models.Institution.organization_id.in_(
@@ -354,23 +358,24 @@ def get_apointment(
                         models.Organization.path.descendant_of(user.organization.path)
                     )
                 )
+            )
         )
-
-    ) .unique()
+        .unique()
         .scalar_one_or_none()
     )
-def get_clinical_trial(
-  database: Database,
-  clinical_trial_code: str,
-  institution_name: str,
-  user: CurrentUser,
 
+
+def get_clinical_trial(
+    database: Database,
+    clinical_trial_code: str,
+    institution_name: str,
+    user: CurrentUser,
 ) -> models.ClinicalTrials | None:
     """
     Get a  prescription from database
     """
     return (
-            database.execute(
+        database.execute(
             select(models.ClinicalTrials)
             .join(models.Institution, models.Institution.name == institution_name)
             .where(models.ClinicalTrials.clinical_trial_code == clinical_trial_code)
@@ -380,9 +385,9 @@ def get_clinical_trial(
                         models.Organization.path.descendant_of(user.organization.path)
                     )
                 )
+            )
         )
-
-    ) .unique()
+        .unique()
         .scalar_one_or_none()
     )
 

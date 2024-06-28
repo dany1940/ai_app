@@ -5,15 +5,16 @@ Revises: cb765cf2f09c
 Create Date: 2024-06-26 15:39:24.014074
 
 """
+
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '912ccb3e7b1f'
-down_revision: Union[str, None] = 'cb765cf2f09c'
+revision: str = "912ccb3e7b1f"
+down_revision: Union[str, None] = "cb765cf2f09c"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

@@ -1,19 +1,22 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, HTTPException, status
+
 import app.schemas
 from app import models
-from app.dependencies import Database, Patient, Institution, Clinician, Apointment, ClinicalTrial
-from datetime import datetime
-from datetime import timezone
-
-
-
-
+from app.dependencies import (Apointment, ClinicalTrial, Clinician, Database,
+                              Institution, Patient)
 
 router = APIRouter(
-    prefix="/clinical_trials", tags=["clinical_trials"], responses={404: {"description": "Not Found"}}
+    prefix="/clinical_trials",
+    tags=["clinical_trials"],
+    responses={404: {"description": "Not Found"}},
 )
 
-@router.post("/{clinical_trial_code}", status_code=status.HTTP_201_CREATED, response_model=None)
+
+@router.post(
+    "/{clinical_trial_code}", status_code=status.HTTP_201_CREATED, response_model=None
+)
 def post_clinical_trials(
     fields: app.schemas.ClinicalTrialCreate,
     clinical_trial_code: str,
@@ -33,10 +36,7 @@ def post_clinical_trials(
             409, detail="There is already a clinical trial with this credentials"
         )
     if not apointment:
-        raise HTTPException(
-            409, detail="There is no apointment with this credentials"
-        )
-
+        raise HTTPException(409, detail="There is no apointment with this credentials")
 
     new_clinical_trial = models.ClinicalTrials(
         clinical_trial_code=clinical_trial_code,
@@ -46,7 +46,6 @@ def post_clinical_trials(
         updated_on=datetime.now(timezone.utc),
         created_on=datetime.now(timezone.utc),
         **fields.model_dump(),
-
     )
 
     database.add(new_clinical_trial)

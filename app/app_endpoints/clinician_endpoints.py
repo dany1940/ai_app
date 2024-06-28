@@ -1,13 +1,14 @@
+from datetime import datetime, timezone
+from typing import Annotated, cast
+
 from fastapi import APIRouter, HTTPException, status
+from pydantic import Field
+from sqlalchemy import select
 
 import app.schemas
 from app import models
-from app.dependencies import Clinician, Database, CurrentUser
+from app.dependencies import Clinician, CurrentUser, Database
 from app.utils import expect
-from sqlalchemy import select
-from typing import cast, Annotated
-from pydantic import Field
-from datetime import datetime, timezone
 
 router = APIRouter(
     prefix="/clinician",
@@ -16,14 +17,15 @@ router = APIRouter(
 )
 
 
-@router.post("/{clinician_code}", status_code=status.HTTP_201_CREATED, response_model=None)
+@router.post(
+    "/{clinician_code}", status_code=status.HTTP_201_CREATED, response_model=None
+)
 def post_clinician(
     fields: app.schemas.ClinicianCreate,
     database: Database,
     clinician_code: str,
     existing_clinician: Clinician,
     user: CurrentUser,
-
 ) -> None:
     """
     Create a new Clinician in DB
@@ -36,8 +38,9 @@ def post_clinician(
     if fields.institution_name:
         institution_id: int = expect(
             database.execute(
-                select(models.Institution.id)
-                .where(models.Institution.name == fields.institution_name)
+                select(models.Institution.id).where(
+                    models.Institution.name == fields.institution_name
+                )
             ).scalar_one_or_none(),
             error_msg="No institution could be found with that name",
         )

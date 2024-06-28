@@ -2,9 +2,10 @@ from datetime import date, datetime
 from typing import Never
 
 from sqlalchemy import select
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import (Mapped, Session, mapped_column, object_session,
                             relationship)
 from sqlalchemy.sql.schema import Column, ForeignKey, Identity
@@ -12,11 +13,9 @@ from sqlalchemy.sql.sqltypes import (TEXT, Boolean, Date, DateTime, Enum,
                                      Integer, SmallInteger, String)
 from sqlalchemy_utils import LtreeType
 from sqlalchemy_utils.types.ltree import LQUERY
-from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy.dialects.postgresql import JSONB
 
-from .commons import (BloodGroupType, FormType, GenderType, StatusType,
-                      TitleType, PrescriptionStatusType)
+from .commons import (BloodGroupType, FormType, GenderType,
+                      PrescriptionStatusType, StatusType, TitleType)
 
 Base = declarative_base()
 
@@ -85,9 +84,10 @@ class Patient(Base):
     prescription = relationship("Prescription", back_populates="patient")
     apointment = relationship("Apointments", back_populates="patient")
     clinical_trial = relationship("ClinicalTrials", back_populates="patient")
-    clinician_id = Column(Integer, ForeignKey("clinician_tab.registration_id"), nullable=True)
+    clinician_id = Column(
+        Integer, ForeignKey("clinician_tab.registration_id"), nullable=True
+    )
     clinician = relationship("Clinician", back_populates="patient")
-
 
 
 class Image(Base):
@@ -97,6 +97,7 @@ class Image(Base):
     link = Column(String, nullable=False)
     created_on = Column(DateTime(timezone=False), nullable=False)
     medication = relationship("Medication", back_populates="image")
+
 
 class Clinician(Base):
     __tablename__ = "clinician_tab"
@@ -127,6 +128,7 @@ class Clinician(Base):
     clinical_trial = relationship("ClinicalTrials", back_populates="clinician")
     clinician_code = Column(String, nullable=False, unique=True)
     patient = relationship("Patient", back_populates="clinician")
+
 
 class Institution(Base):
     __tablename__ = "institution_tab"
@@ -180,7 +182,6 @@ class Organization(Base):
     users = relationship("User", back_populates="organization")
     url = Column(String, nullable=True)
     path = Column(LtreeType, nullable=False)
-
 
     @hybrid_property
     def children(self) -> list["Organization"]:
@@ -292,12 +293,12 @@ class Medication(Base):
     prescription = relationship("Prescription", back_populates="medication")
 
 
-
-
 class Prescription(Base):
     __tablename__ = "prescription_tab"
     """Table holding the Prescription columns"""
-    prescription_id: Column[str] = Column(Integer, Identity(always=True),primary_key=True)
+    prescription_id: Column[str] = Column(
+        Integer, Identity(always=True), primary_key=True
+    )
     prescription_code: Column[str] = Column(String, nullable=False, unique=True)
     clinician_refrence: Column[int] = Column(
         Integer, ForeignKey("clinician_tab.registration_id")
@@ -325,61 +326,62 @@ class Prescription(Base):
         server_default=PrescriptionStatusType.ACTIVE.value,
     )  # type: ignore
     medication = relationship("Medication", back_populates="prescription")
-    medication_refrence = Column(String, ForeignKey("medication_tab.medication_reference"))
-    medication_json =  Column(MutableDict.as_mutable(JSONB), nullable=True)
-
-
-
+    medication_refrence = Column(
+        String, ForeignKey("medication_tab.medication_reference")
+    )
+    medication_json = Column(MutableDict.as_mutable(JSONB), nullable=True)
 
 
 class Apointments(Base):
-        __tablename__ = "apointment_tab"
-        """Table holding the Apointment columns"""
-        apointment_id: Column[int] = Column(Integer, Identity(always=True), primary_key=True)
-        apointment_code: Column[str] = Column(String, nullable=False, unique=True)
-        clinician_refrence: Column[int] = Column(
-            Integer, ForeignKey("clinician_tab.registration_id")
-        )
-        patient_refrence: Column[int] = Column(
-            Integer, ForeignKey("patient_tab.registration_id")
-        )
-        clinician = relationship("Clinician", back_populates="apointment")
-        patient = relationship("Patient", back_populates="apointment")
-        institution_refrence: Column[int] = Column(
-            Integer, ForeignKey("institution_tab.id")
-        )
-        institution = relationship("Institution", back_populates="apointment")
-        clincal_trial_id: Column[int] | None= Column(
-            Integer, ForeignKey("clinical_trial_tab.clinical_trial_id")
-        )
-        clinical_trial = relationship("ClinicalTrials", back_populates="apointment")
-        reason: Column[date | None] = Column(TEXT, nullable=True)
-        creted_on: Column[datetime] = Column(DateTime, nullable=False)
-        updated_on: Column[datetime] = Column(DateTime, nullable=False)
-        apointment_date: Column[datetime] = Column(DateTime, nullable=False, unique=True)
-
-
+    __tablename__ = "apointment_tab"
+    """Table holding the Apointment columns"""
+    apointment_id: Column[int] = Column(
+        Integer, Identity(always=True), primary_key=True
+    )
+    apointment_code: Column[str] = Column(String, nullable=False, unique=True)
+    clinician_refrence: Column[int] = Column(
+        Integer, ForeignKey("clinician_tab.registration_id")
+    )
+    patient_refrence: Column[int] = Column(
+        Integer, ForeignKey("patient_tab.registration_id")
+    )
+    clinician = relationship("Clinician", back_populates="apointment")
+    patient = relationship("Patient", back_populates="apointment")
+    institution_refrence: Column[int] = Column(
+        Integer, ForeignKey("institution_tab.id")
+    )
+    institution = relationship("Institution", back_populates="apointment")
+    clincal_trial_id: Column[int] | None = Column(
+        Integer, ForeignKey("clinical_trial_tab.clinical_trial_id")
+    )
+    clinical_trial = relationship("ClinicalTrials", back_populates="apointment")
+    reason: Column[date | None] = Column(TEXT, nullable=True)
+    creted_on: Column[datetime] = Column(DateTime, nullable=False)
+    updated_on: Column[datetime] = Column(DateTime, nullable=False)
+    apointment_date: Column[datetime] = Column(DateTime, nullable=False, unique=True)
 
 
 class ClinicalTrials(Base):
-        __tablename__ = "clinical_trial_tab"
-        """Table holding the Clinical Trials columns"""
-        clinical_trial_id: Column[str] = Column(Integer, Identity(always=True), primary_key=True)
-        clinical_trial_code: Column[str] = Column(String, nullable=False, unique=True)
-        clinician_refrence: Column[int] = Column(
-            Integer, ForeignKey("clinician_tab.registration_id")
-        )
+    __tablename__ = "clinical_trial_tab"
+    """Table holding the Clinical Trials columns"""
+    clinical_trial_id: Column[str] = Column(
+        Integer, Identity(always=True), primary_key=True
+    )
+    clinical_trial_code: Column[str] = Column(String, nullable=False, unique=True)
+    clinician_refrence: Column[int] = Column(
+        Integer, ForeignKey("clinician_tab.registration_id")
+    )
 
-        patient_refrence: Column[int] = Column(
-            Integer, ForeignKey("patient_tab.registration_id")
-        )
-        clinician = relationship("Clinician", back_populates="clinical_trial")
-        patient = relationship("Patient", back_populates="clinical_trial")
-        institution_refrence: Column[int] = Column(
-            Integer, ForeignKey("institution_tab.id")
-        )
-        institution = relationship("Institution", back_populates="clinical_trial")
-        apointment = relationship("Apointments", back_populates="clinical_trial")
-        reason: Column[date | None] = Column(TEXT, nullable=True)
-        created_on: Column[datetime] = Column(DateTime, nullable=False)
-        updated_on: Column[datetime] = Column(DateTime, nullable=False)
+    patient_refrence: Column[int] = Column(
+        Integer, ForeignKey("patient_tab.registration_id")
+    )
+    clinician = relationship("Clinician", back_populates="clinical_trial")
+    patient = relationship("Patient", back_populates="clinical_trial")
+    institution_refrence: Column[int] = Column(
+        Integer, ForeignKey("institution_tab.id")
+    )
+    institution = relationship("Institution", back_populates="clinical_trial")
+    apointment = relationship("Apointments", back_populates="clinical_trial")
+    reason: Column[date | None] = Column(TEXT, nullable=True)
+    created_on: Column[datetime] = Column(DateTime, nullable=False)
+    updated_on: Column[datetime] = Column(DateTime, nullable=False)

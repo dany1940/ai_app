@@ -1,159 +1,32 @@
-from typing import Annotated, Literal, cast
+from typing import Annotated, cast
 
-from dotenv import load_dotenv
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from sqlalchemy import and_, create_engine, select
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import and_, select
 
-from app import models, schemas
-from app.commons import FormType
+from sqlalchemy.orm import Session, joinedload
+from app import models
 from app.conf import config
 from app.security import verify_password
+from app.database import get_db_session
+from sqlalchemy.ext.asyncio import AsyncSession
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 
-SQLALCHEMY_DATABASE_URL = f"postgresql://{config.POSTGRES_USER}:{config.POSTGRES_PASSWORD}@{config.POSTGRES_HOST}:{config.POSTGRES_PORT}/{config.POSTGRES_DB}"
-load_dotenv()
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    pool_pre_ping=True,
-)
 
 
-Base = declarative_base()
 
 
-def get_db():
-    """
-    Acquire database connection from the pool.
-    """
 
-    with Session(bind=engine) as database:
-        yield database
+Database = Annotated[AsyncSession, Depends(get_db_session)]
 
 
-Database = Annotated[Session, Depends(get_db)]
 
 
-def get_patient_by_code(
-    database: Database,
-    patient_code: str,
-) -> models.Patient | None:
-    """
-    Get a  patient from database
-    """
-
-    return (
-        database.execute(
-            select(models.Patient).where(
-                and_(
-                    models.Patient.patient_code == patient_code,
-                )
-            )
-        )
-        .unique()
-        .scalar_one_or_none()
-    )
-
-
-def get_clinician(
-    database: Database,
-    clinician_code: str,
-) -> models.Clinician | None:
-    """
-    Get a  clinician from database
-    """
-
-    return (
-        database.execute(
-            select(models.Clinician).where(
-                and_(
-                    models.Clinician.clinician_code == clinician_code,
-                )
-            )
-        )
-        .unique()
-        .scalar_one_or_none()
-    )
-
-
-def get_medication(
-    database: Database,
-    medication_code: str,
-) -> models.Medication | None:
-    """
-    Get a  patient from database
-    """
-
-    return (
-        database.execute(
-            select(models.Medication).where(
-                and_(
-                    models.Medication.code_name == medication_code,
-                )
-            )
-        )
-        .unique()
-        .scalar_one_or_none()
-    )
-
-
-def get_medication_by_id(
-    database: Database,
-    patient_refrence: int,
-) -> models.Medication | None:
-    return (
-        database.execute(
-            select(models.Patient).where(
-                and_(models.Patient.registration_id == patient_refrence)
-            )
-        )
-        .unique()
-        .scalar_one_or_none()
-    )
-
-
-def get_clinician_by_id(
-    database: Database,
-    registration_id: int,
-) -> models.Clinician | None:
-    return (
-        database.execute(
-            select(models.Clinician).where(
-                and_(models.Clinician.registration_id == registration_id)
-            )
-        )
-        .unique()
-        .scalar_one_or_none()
-    )
-
-
-def get_contact(
-    database: Database,
-    contact: schemas.ContactCreate,
-) -> models.Contact | None:
-    """
-    Get a  contact from database
-    """
-
-    return (
-        database.execute(
-            select(models.Contact).where(
-                and_(
-                    models.Contact.contact == contact.contact,
-                    models.Contact.contact_name == contact.contact_name,
-                    models.Contact.institution_id == contact.institution_id,
-                )
-            )
-        )
-        .unique()
-        .scalar_one_or_none()
-    )
 
 
 def get_organization() -> models.Organization | None:
@@ -163,31 +36,10 @@ def get_organization() -> models.Organization | None:
     pass
 
 
-def get_image(
-    database: Database,
-    image: schemas.Image,
-) -> models.Image | None:
-    """
-    Get a  image from database
-    """
 
-    return (
-        database.execute(
-            select(models.Image).where(
-                and_(
-                    models.Image.image_name == image.image_name,
-                )
-            )
-        )
-        .unique()
-        .scalar_one_or_none()
-    )
+async def authenticate_user(db_session: Database, username: str, password: str):
+    user = (await db_session.scalars(select(models.User).where(models.User.username == username))).first()
 
-
-def authenticate_user(database: Database, username: str, password: str):
-    user: models.User | None = (
-        database.query(models.User).filter(models.User.username == username).first()
-    )
     if user is None:
         return None
     if not verify_password(password, cast(str, user.pword_hash)):
@@ -195,9 +47,9 @@ def authenticate_user(database: Database, username: str, password: str):
     return user
 
 
-def user_from_token(
+async def user_from_token(
     token: str,
-    database: Database,
+    db_session: Database,
     credentials_exception: Exception | None = None,
 ) -> models.User:
     """
@@ -234,19 +86,15 @@ def user_from_token(
     username = cast(str | None, payload.get("sub"))
     if username is None:
         raise credentials_exception
-    user = (
-        database.query(models.User)
+    user = (await db_session.scalars(select(models.User)
         .filter(models.User.username == username)
         .join(models.User.organization)
-        .options(joinedload(models.User.organization))
-        .first()
-    )
-    if user is None:
-        raise credentials_exception
+        .options(joinedload(models.User.organization)))).first()
+
     return user
 
 
-def get_current_user(
+async def get_current_user(
     database: Database,
     token: str = Depends(oauth2_scheme),
 ):
@@ -256,7 +104,8 @@ def get_current_user(
     If the token is valid, return the currently logged in user.
     If the token is invalid, raise a 401 (Unauthorized) exception.
     """
-    return user_from_token(token, database)
+    user = await user_from_token(token, database)
+    return user
 
 
 CurrentUser = Annotated[models.User, Depends(get_current_user)]
@@ -275,6 +124,7 @@ def get_current_super_user(user: CurrentUser):
 
 
 def get_current_admin_user(user: CurrentUser):
+
     if user.organization_id != 1:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -283,18 +133,15 @@ def get_current_admin_user(user: CurrentUser):
     return user
 
 
-CurrentSuperUser = Annotated[models.User, Depends(get_current_super_user)]
-
-
-def get_institution(
+async def get_institution(
     database: Database, institution_name: str, user: CurrentUser
 ) -> models.Institution | None:
     """
     Get a  institution from database
     """
 
-    return (
-        database.execute(
+    institution =  (
+        await database.scalars(
             select(models.Institution)
             .where(models.Institution.name == institution_name)
             .where(
@@ -305,16 +152,69 @@ def get_institution(
                 )
             )
         )
-        .unique()
-        .scalar_one_or_none()
+    ).first()
+    return institution
+
+async def get_clinician(
+    database: Database,
+    clinician_code: str,
+) -> models.Clinician | None:
+    """
+    Get a  clinician from database
+    """
+
+    clinician = (
+        await database.scalars(
+            select(models.Clinician).where(
+                and_(
+                    models.Clinician.clinician_code == clinician_code,
+                )
+            )
+        ).first()
     )
 
-
-Patient = Annotated[models.Patient, Depends(get_patient_by_code)]
-Clinician = Annotated[models.Clinician, Depends(get_clinician)]
+    return clinician
 
 
-def get_prescription(
+async def get_patient_by_code(
+    database: Database,
+    patient_code: str,
+) -> models.Patient | None:
+    """
+    Get a  patient from database
+    """
+
+    patient = (
+        await database.scalars(
+            select(models.Patient).where(
+                and_(
+                    models.Patient.patient_code == patient_code,
+                )
+            )
+        ).first()
+    )
+    return patient
+
+async def get_medication(
+    database: Database,
+    medication_code: str,
+) -> models.Medication | None:
+    """
+    Get a  patient from database
+    """
+
+    medication =  (
+    await  database.scalars(
+            select(models.Medication).where(
+                and_(
+                    models.Medication.code_name == medication_code,
+                )
+            )
+        ).first()
+    )
+    return medication
+
+async def get_prescription(
     database: Database,
     prescription_code: str,
     user: CurrentUser,
@@ -322,21 +222,16 @@ def get_prescription(
     """
     Get a  prescription from database
     """
-    return (
-        database.execute(
+    prescription = (
+        await database.scalars(
             select(models.Prescription.prescription_code).where(
                 models.Prescription.prescription_code == prescription_code
             )
-        )
-        .unique()
-        .scalar_one_or_none()
+        ).first()
     )
+    return prescription
 
-
-Institution = Annotated[models.Institution, Depends(get_institution)]
-
-
-def get_apointment(
+async def get_apointment(
     database: Database,
     apointment_code: str,
     user: CurrentUser,
@@ -344,8 +239,8 @@ def get_apointment(
     """
     Get a  prescription from database
     """
-    return (
-        database.execute(
+    apointment = (
+        await database.scalars(
             select(models.Apointments)
             .join(
                 models.Institution,
@@ -359,13 +254,13 @@ def get_apointment(
                     )
                 )
             )
-        )
-        .unique()
-        .scalar_one_or_none()
+        ).first()
     )
+    return apointment
 
 
-def get_clinical_trial(
+
+async def get_clinical_trial(
     database: Database,
     clinical_trial_code: str,
     institution_name: str,
@@ -374,8 +269,8 @@ def get_clinical_trial(
     """
     Get a  prescription from database
     """
-    return (
-        database.execute(
+    clinical_trial = (
+    await database.scalars(
             select(models.ClinicalTrials)
             .join(models.Institution, models.Institution.name == institution_name)
             .where(models.ClinicalTrials.clinical_trial_code == clinical_trial_code)
@@ -386,20 +281,20 @@ def get_clinical_trial(
                     )
                 )
             )
-        )
-        .unique()
-        .scalar_one_or_none()
+        ).first()
     )
+    return clinical_trial
 
 
-ClinicalTrial = Annotated[models.ClinicalTrials, Depends(get_clinical_trial)]
+
+Clinical_Trial = Annotated[models.ClinicalTrials, Depends(get_clinical_trial)]
 Apointment = Annotated[models.Apointments, Depends(get_apointment)]
 Prescription = Annotated[models.Prescription, Depends(get_prescription)]
-CurrentAdminUser = Annotated[models.User, Depends(get_current_admin_user)]
-Image = Annotated[models.Image, Depends(get_image)]
-Organisation = Annotated[models.Organization, Depends(get_institution)]
-Contact = Annotated[models.Contact, Depends(get_contact)]
-
+Clinician = Annotated[models.Clinician, Depends(get_clinician)]
+Patient = Annotated[models.Patient, Depends(get_patient_by_code)]
 Medication = Annotated[models.Medication, Depends(get_medication)]
-MedicationById = Annotated[models.Medication, Depends(get_medication_by_id)]
-ClinicianById = Annotated[models.Clinician, Depends(get_clinician_by_id)]
+CurrentSuperUser = Annotated[models.User, Depends(get_current_super_user)]
+Institution = Annotated[models.Institution, Depends(get_institution)]
+CurrentAdminUser = Annotated[models.User, Depends(get_current_admin_user)]
+
+

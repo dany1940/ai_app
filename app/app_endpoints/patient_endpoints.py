@@ -17,11 +17,11 @@ router = APIRouter(
 @router.post(
     "/{patient_code}", status_code=status.HTTP_201_CREATED, response_model=None
 )
-def post_patient(
+async def post_patient(
     fields: app.schemas.PatientCreate,
     patient_code: str,
     patient: Patient,
-    database: Database,
+    db_session: Database,
     user: CurrentUser,
 ):
     """
@@ -34,11 +34,12 @@ def post_patient(
         )
     if fields.institution_name:
         institution_id: int = expect(
-            database.execute(
+           (await db_session.scalars(
                 select(models.Institution.id).where(
                     models.Institution.name == fields.institution_name
                 )
-            ).scalar_one_or_none(),
+            )
+        ).first(),
             error_msg="No institution could be found with that name",
         )
     else:
@@ -46,14 +47,14 @@ def post_patient(
 
     if fields.clinician_code:
         clinician_id: int = expect(
-            database.execute(
+            (await db_session.scalars(
                 select(models.Clinician.registration_id).where(
                     and_(
                         models.Clinician.clinician_code == fields.clinician_code,
                         models.Clinician.institution_id == institution_id,
                     )
                 )
-            ).scalar_one_or_none(),
+            )).first(),
             error_msg="No clinician could be found with that name",
         )
     else:
@@ -70,5 +71,5 @@ def post_patient(
         ),
     )
 
-    database.add(new_patient)
-    database.commit()
+    db_session.add(new_patient)
+    await db_session.commit()

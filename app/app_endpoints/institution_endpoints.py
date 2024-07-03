@@ -19,7 +19,7 @@ router = APIRouter(
 @router.post(
     "/{institution_name}", status_code=status.HTTP_201_CREATED, response_model=None
 )
-def post_institution(
+async def post_institution(
     fields: InstitutionCreate,
     institution_name: str,
     database: Database,
@@ -36,11 +36,11 @@ def post_institution(
         )
     if fields.organization_name:
         organization_id: int = expect(
-            database.execute(
+            (await database.scalars(
                 select(models.Organization.id).where(
                     models.Organization.name == fields.organization_name
                 )
-            ).scalar_one_or_none(),
+            )).first(),
             error_msg="No organization could be found with that name",
         )
     else:
@@ -49,8 +49,8 @@ def post_institution(
     new_institution = models.Institution(
         organization_id=organization_id,
         name=institution_name,
-        created_on=datetime.now(timezone.utc),
+        created_on=datetime.now(),
         **fields.model_dump(exclude={"institution_name", "organization_name"}),
     )
     database.add(new_institution)
-    database.commit()
+    await database.commit()

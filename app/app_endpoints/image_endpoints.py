@@ -10,7 +10,7 @@ router = APIRouter(
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=None)
-def post_image(
+async def post_image(
     patient: app.ImageCreate,
     database: Database,
 ):
@@ -22,4 +22,4 @@ def post_image(
         **patient.model_dump(),
     )
     database.add(new_image)
-    database.commit()
+    await database.commit()

@@ -20,7 +20,7 @@ router = APIRouter(
 @router.post(
     "/{clinician_code}", status_code=status.HTTP_201_CREATED, response_model=None
 )
-def post_clinician(
+async def post_clinician(
     fields: app.schemas.ClinicianCreate,
     database: Database,
     clinician_code: str,
@@ -37,11 +37,11 @@ def post_clinician(
         )
     if fields.institution_name:
         institution_id: int = expect(
-            database.execute(
+           ( await database.scalars(
                 select(models.Institution.id).where(
                     models.Institution.name == fields.institution_name
                 )
-            ).scalar_one_or_none(),
+            )).first(),
             error_msg="No institution could be found with that name",
         )
     else:
@@ -55,4 +55,4 @@ def post_clinician(
     )
 
     database.add(new_clinician)
-    database.commit()
+    await database.commit()

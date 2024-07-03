@@ -11,12 +11,28 @@ from app.schemas import UserCreate, UserPasswordUpdate, UserUpdate
 from app.security import get_password_hash, verify_password
 
 router = APIRouter(
+    prefix="/api/user", tags=["user"], responses={404: {"description": "Not Found"}}
+)
+
+from typing import cast
+
+from fastapi import APIRouter, HTTPException, status
+from sqlalchemy import delete, insert, or_, update
+from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import select
+
+from app import models
+from app.dependencies import CurrentAdminUser, CurrentUser, Database
+from app.schemas import UserCreate, UserPasswordUpdate, UserUpdate
+from app.security import get_password_hash, verify_password
+
+router = APIRouter(
     prefix="/user", tags=["user"], responses={404: {"description": "Not Found"}}
 )
 
 
 @router.get("/me", response_model=None)
-def get_current_user(
+async def get_current_user(
     user: CurrentUser,
 ):
     """
@@ -27,10 +43,10 @@ def get_current_user(
 
 
 @router.put("/me/password", status_code=status.HTTP_204_NO_CONTENT)
-def update_password(
+async def update_password(
     password_fields: UserPasswordUpdate,
     user: CurrentUser,
-    database: Database,
+    db_session: Database,
 ):
     """
     Update the password of the currently logged in user.
@@ -55,16 +71,17 @@ def update_password(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password."
         )
 
-    database.execute(
+    query = (
         update(models.User)
         .where(models.User.id == user.id)
         .values(pword_hash=get_password_hash(password_fields.new_password))
     )
-    database.commit()
+    await db_session.execute(query)
+    await db_session.commit()
 
 
 @router.put("/me")
-def update_current_user(
+async def update_current_user(
     new_user: UserUpdate,
     database: Database,
     user: CurrentUser,
@@ -72,8 +89,8 @@ def update_current_user(
     """
     Update the currently logged in user.
     """
-    existing_user = (
-        database.execute(
+    existing_user =(await
+        database.scalars(
             select(models.User)
             .where(models.User.id != user.id)
             .where(
@@ -83,9 +100,7 @@ def update_current_user(
                 )
             )
         )
-        .scalars()
-        .all()
-    )
+    ).all()
 
     if existing_user:
         raise HTTPException(
@@ -93,29 +108,27 @@ def update_current_user(
             detail="A user with that username or email already exists",
         )
 
-    database.execute(
+    query = (
         update(models.User)
         .where(models.User.id == user.id)
         .values(
             firstname=new_user.firstname,
             email=new_user.email,
             lastname=new_user.lastname,
-            language_code=new_user.language.value,
-            pressure_unit=new_user.pressure_unit.value,
-            temperature_unit=new_user.temperature_unit,
             username=new_user.username,
         )
     )
-    database.commit()
+    await database.execute(query)
+    await database.commit()
 
 
 @router.get("/users/{username}", response_model=None)
-def get_user(
+async def get_user(
     username: str,
     user: CurrentAdminUser,
-    database: Database,
+    db_session: Database,
 ):
-    return database.scalar(
+    user = await(
         select(models.User)
         .where(models.User.username == username)
         .options(joinedload(models.User.organization))
@@ -127,74 +140,62 @@ def get_user(
             )
         )
     )
+    return user
 
-
-@router.post("/user/{username}")
-def create_user(
+@router.post("/{username}")
+async def create_user(
     username: str,
     user: UserCreate,
-    database: Database,
+    db_session: Database,
     current_user: CurrentAdminUser,
 ):
     """
     Create a new user in your organization.
     """
-
-    existing_user = database.execute(
-        select(models.User).where(
-            or_(
-                models.User.username == username,
-                models.User.email == user.email,
-            )
-        )
-    ).scalar_one_or_none()
-
+    existing_user =  (await db_session.scalars(select(models.User).where(models.User.username == username))).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="A user with that username or email already exists",
         )
-
     if not user.organization_name:
         organization_id = current_user.organization_id
     else:
-        organization_id = database.execute(
+        organization_id =  (await db_session.scalars(
             select(models.Organization.id)
             .where(models.Organization.name == user.organization_name)
             .where(
                 models.Organization.path.descendant_of(current_user.organization.path)
             )
-        ).scalar_one_or_none()
+        )).first()
 
         if organization_id is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No organization could be found with that name",
             )
-    database.execute(
-        insert(models.User).values(
+    query = insert(models.User).values(
             username=username,
             email=user.email,
             firstname=user.firstname,
             lastname=user.lastname,
-            language_code=user.language.value,
-            pressure_unit=user.pressure_unit.value,
-            temperature_unit=user.temperature_unit.value,
             pword_hash=get_password_hash(user.password),
             organization_id=organization_id,
             can_edit=user.is_admin,
         )
-    )
-    database.commit()
+    user = await db_session.execute(query)
+    await db_session.commit()
+
+
 
 
 @router.delete(
     "/user/{username}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_user(
+async def delete_user(
     username: str,
-    database: Database,
+    db_session: Database,
     current_user: CurrentAdminUser,
 ):
     if username == current_user.username:
@@ -203,7 +204,7 @@ def delete_user(
             detail="You cannot delete your own account",
         )
 
-    user_to_delete = database.execute(
+    user_to_delete  = ( await db_session.scalars(
         select(models.User.id)
         .where(
             models.User.username == username,
@@ -217,17 +218,16 @@ def delete_user(
                 )
             )
         )
-    ).scalar_one_or_none()
+    )
+    ).first()
+
 
     if user_to_delete is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No user could be found with that username",
         )
-    database.execute(
-        delete(models.user_vehicle_alert_association).where(
-            models.user_vehicle_alert_association.c.user_id == user_to_delete
-        )
-    )
-    database.execute(delete(models.User).where(models.User.username == username))
-    database.commit()
+
+    query = (delete(models.User).where(models.User.username == username))
+    await db_session.execute(query)
+    await db_session.commit()

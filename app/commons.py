@@ -2,7 +2,7 @@ import enum
 from typing import Literal
 
 from pydantic import UUID4, BaseModel
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 
 class GenderType(enum.Enum):
@@ -55,7 +55,6 @@ class UserAuthorisation(enum.Enum):
     ADMIN = "ADMIN"
 
 
-Base = declarative_base()
 
 
 class Token(BaseModel):

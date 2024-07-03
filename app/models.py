@@ -1,24 +1,85 @@
 from datetime import date, datetime
 from typing import Never
-
+from uuid import uuid4
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, JSONB
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy.orm import (Mapped, Session, mapped_column, object_session,
+from sqlalchemy.orm import (Session, mapped_column, object_session,
                             relationship)
 from sqlalchemy.sql.schema import Column, ForeignKey, Identity
 from sqlalchemy.sql.sqltypes import (TEXT, Boolean, Date, DateTime, Enum,
                                      Integer, SmallInteger, String)
 from sqlalchemy_utils import LtreeType
 from sqlalchemy_utils.types.ltree import LQUERY
-
+from sqlalchemy.exc import NoResultFound
 from .commons import (BloodGroupType, FormType, GenderType,
-                      PrescriptionStatusType, StatusType, TitleType)
+                      PrescriptionStatusType, TitleType)
 
-Base = declarative_base()
+from app.database import Base
+from fastapi import HTTPException, status
 
+
+
+
+
+class Organization(Base):
+    __tablename__ = "organization_tab"
+
+    id = Column(Integer, Identity(always=True), primary_key=True)
+    name = Column(String, nullable=False, unique=True)
+    created_on = Column(DateTime(timezone=False), nullable=False, unique=False)
+    address = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    telephone = Column(String, nullable=True)
+    url = Column(String, nullable=True)
+    path = Column(LtreeType, nullable=False)
+    users = relationship("User", back_populates="organization")
+    institution = relationship("Institution", back_populates="organisation")
+    @hybrid_property
+    def children(self) -> list["Organization"]:
+        session = object_session(self)
+        if isinstance(session, Session):
+            return (
+                session.execute(
+                    select(Organization).where(
+                        Organization.path.lquery(
+                            expression.cast(f"{self.path}.*{{1}}", LQUERY)  # type: ignore # noqa: E501
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            )
+        raise NotImplementedError("Method not implemented for async sessions")
+
+    def __repr__(self) -> str:
+        return f"Organization(name={self.name})"
+
+
+class User(Base):
+    __tablename__ = "user_tab"
+    __allow_unmapped__ = True
+
+    id: int = Column(Integer, primary_key=True)
+    username: str = Column(String, nullable=False, unique=True)
+    email: str = Column(String, nullable=False, unique=True)
+    pword_hash: str = Column(String, nullable=False)
+    firstname: str | None = Column(String, nullable=True)
+    lastname: str | None = Column(String, nullable=True)
+    can_edit: bool = Column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
+    organization_id = Column(Integer, ForeignKey("organization_tab.id"), nullable=True)
+    organization: "Organization" = relationship(
+        "Organization", lazy="joined", uselist=False, back_populates="users"
+    )
+
+
+    def __repr__(self) -> str:
+        return f"User(email={self.email}, organization={self.organization_id})"
 
 class Patient(Base):
     __tablename__ = "patient_tab"
@@ -133,7 +194,7 @@ class Clinician(Base):
 class Institution(Base):
     __tablename__ = "institution_tab"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, autoincrement=True, primary_key=True)
     name = Column(String(255), nullable=False, unique=True)
     created_on = Column(DateTime, nullable=False)
     contact_number: Column[String] = Column(String(255), nullable=True)
@@ -143,92 +204,12 @@ class Institution(Base):
     patient = relationship("Patient", back_populates="institution")
     clinician = relationship("Clinician", back_populates="institution")
     organisation = relationship("Organization", back_populates="institution")
-    users = relationship("User", back_populates="institution")
     notes: Column[TEXT] = Column(TEXT, nullable=True)
     apointment = relationship("Apointments", back_populates="institution")
     clinical_trial = relationship("ClinicalTrials", back_populates="institution")
 
     def __repr__(self) -> str:
         return f"Institution(id={self.id}, name={self.name})"
-
-
-class Contact(Base):
-    """
-    Table representing an email contact for an institution.
-    """
-
-    __tablename__ = "contact_tab"
-    contact = Column(TEXT, primary_key=True)
-    contact_name = Column(TEXT, nullable=False)
-
-    institution_id = Column(Integer, ForeignKey("institution_tab.id"), primary_key=True)
-
-
-class Organization(Base):
-    __tablename__ = "organization_tab"
-
-    id = Column(Integer, Identity(always=True), primary_key=True)
-    name = Column(String, nullable=False, unique=True)
-    created_on = Column(DateTime(timezone=False), nullable=False, unique=False)
-    address = Column(String, nullable=True)
-    email = Column(String, nullable=True)
-    telephone = Column(String, nullable=True)
-    institution = relationship("Institution", back_populates="organisation")
-    profile_picture_id = Column(
-        Integer,
-        ForeignKey("image_tab.image_id"),
-        nullable=True,
-    )
-    users = relationship("User", back_populates="organization")
-    url = Column(String, nullable=True)
-    path = Column(LtreeType, nullable=False)
-
-    @hybrid_property
-    def children(self) -> list["Organization"]:
-        session = object_session(self)
-        if isinstance(session, Session):
-            return (
-                session.execute(
-                    select(Organization).where(
-                        Organization.path.lquery(
-                            expression.cast(f"{self.path}.*{{1}}", LQUERY)  # type: ignore # noqa: E501
-                        )
-                    )
-                )
-                .scalars()
-                .all()
-            )
-        raise NotImplementedError("Method not implemented for async sessions")
-
-    def __repr__(self) -> str:
-        return f"Organization(name={self.name})"
-
-
-class User(Base):
-    __tablename__ = "user_tab"
-    __allow_unmapped__ = True
-
-    id: int = Column(Integer, Identity(always=True), primary_key=True)
-    username: str = Column(String, nullable=False, unique=True)
-    email: str = Column(String, nullable=False, unique=True)
-    pword_hash: str = Column(String, nullable=False)
-    firstname: str | None = Column(String, nullable=True)
-    lastname: str | None = Column(String, nullable=True)
-    can_edit: bool = Column(
-        Boolean, default=False, server_default="false", nullable=False
-    )
-    organization_id = Column(Integer, ForeignKey("organization_tab.id"), nullable=True)
-    institution_id = Column(Integer, ForeignKey("institution_tab.id"), nullable=True)
-    institution: "Organization" = relationship(
-        "Institution", lazy="joined", uselist=False, back_populates="users"
-    )
-    organization: "Organization" = relationship(
-        "Organization", lazy="joined", uselist=False, back_populates="users"
-    )
-
-    def __repr__(self) -> str:
-        return f"User(email={self.email}, organization={self.organization_id})"
-
 
 class Medication(Base):
     __tablename__ = "medication_tab"

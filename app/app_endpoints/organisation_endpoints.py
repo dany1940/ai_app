@@ -8,31 +8,32 @@ from app.dependencies import CurrentAdminUser, Database
 from app.schemas import OrganizationCreate
 
 router = APIRouter(
-    prefix="/organistation",
-    tags=["organisation"],
+    prefix="/organization",
+    tags=["organization"],
     responses={404: {"description": "Not Found"}},
 )
 
 
 @router.post(
-    "/organizations/{organization_name}",
+    "/{organization_name}",
+    status_code=status.HTTP_201_CREATED,
 )
-def create_organization(
+async def create_organization(
     organization_name: str,
     organization_fields: OrganizationCreate,
-    database: Database,
+    db_session: Database,
 ):
     """
     Create a new organization.
     """
 
-    parent_organization_path = database.execute(
+    parent_organization_path = (await db_session.scalars(
         select(models.Organization.path).where(
             models.Organization.name == organization_fields.parent
         )
-    ).scalar_one_or_none()
+    )).first()
     try:
-        organization_id = database.execute(
+        organization_id = (await  db_session.scalars(
             insert(models.Organization)
             .values(
                 name=organization_name,
@@ -45,7 +46,8 @@ def create_organization(
                 **organization_fields.model_dump(exclude={"parent"}, mode="json"),
             )
             .returning(models.Organization.id)
-        ).scalar_one_or_none()
+        )).first()
+        await db_session.commit()
     except IntegrityError as error:
         # The error that can occur here is a 409 (Conflict)
         # and the only UNIQUE field on this table is "name".
@@ -53,10 +55,11 @@ def create_organization(
             status_code=status.HTTP_409_CONFLICT,
             detail="An organization with that name already exists",
         ) from error
-
-    database.execute(
+    print(organization_id)
+    query = (
         update(models.Organization)
         .where(models.Organization.id == organization_id)
         .values(path=Ltree(f"{parent_organization_path or 'A'}.{organization_id}"))
     )
-    database.commit()
+    await db_session.execute(query)
+    await db_session.commit()

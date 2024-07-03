@@ -13,7 +13,7 @@ from app.security import (create_access_token, create_refresh_token,
                           refresh_token_valid, revoke_refresh_token)
 
 router = APIRouter(
-    prefix="/auth",
+    prefix="/api/auth",
 )
 
 
@@ -22,7 +22,7 @@ async def login_for_access_token(
     database: Database,
     form_data: OAuth2PasswordRequestForm = Depends(),
 ):
-    user = authenticate_user(database, form_data.username, form_data.password)
+    user = await authenticate_user(database, form_data.username, form_data.password)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -3,7 +3,7 @@ import sys
 from contextlib import asynccontextmanager
 
 from app.app_endpoints import (user_endpoints, auth_endpoints, organisation_endpoints, institution_endpoints, patient_endpoints,
-clinician_endpoints, image_endpoints)
+clinician_endpoints, image_endpoints, prescription_endpoints, apointments, medication_endpoints, clinical_trials_endpoints)
 from app.database import sessionmanager
 from fastapi import FastAPI
 
@@ -25,10 +25,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan, docs_url="/api/docs")
 
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
 
 # Routers
 routers = [
@@ -39,6 +35,10 @@ routers = [
     patient_endpoints.router,
     clinician_endpoints.router,
     image_endpoints.router,
+    prescription_endpoints.router,
+    apointments.router,
+    medication_endpoints.router,
+    clinical_trials_endpoints.router,
 
 ]
 for router in routers:

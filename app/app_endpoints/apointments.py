@@ -1,16 +1,10 @@
-from datetime import datetime, timezone
-from typing import Annotated, List, cast
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, status
-from pydantic import Field
-from sqlalchemy import and_, select
-
 import app.schemas
 from app import models
 from app.dependencies import (Apointment, Clinician, CurrentUser, Database,
                               Institution, Patient)
-from app.utils import expect
-
 router = APIRouter(
     prefix="/apointments",
     tags=["apointments"],
@@ -21,7 +15,7 @@ router = APIRouter(
 @router.post(
     "/{apointment_code}", status_code=status.HTTP_201_CREATED, response_model=None
 )
-def post_apointments(
+async def post_apointments(
     fields: app.schemas.ApointmentsCreate,
     apointment_code: str,
     database: Database,
@@ -50,9 +44,9 @@ def post_apointments(
         clinician_refrence=existing_clinician.registration_id,
         patient_refrence=existing_patient.registration_id,
         apointment_code=apointment_code,
-        updated_on=datetime.now(timezone.utc),
-        creted_on=datetime.now(timezone.utc),
+        updated_on=datetime.now(),
+        creted_on=datetime.now(),
         **fields.model_dump(exclude={"apointment_code"}),
     )
     database.add(new_apointment)
-    database.commit()
+    await  database.commit()

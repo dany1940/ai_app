@@ -147,7 +147,7 @@ async def create_user(
     username: str,
     user: UserCreate,
     db_session: Database,
-    current_user: CurrentAdminUser,
+    current_user: CurrentUser,
 ):
     """
     Create a new user in your organization.

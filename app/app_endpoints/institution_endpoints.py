@@ -29,7 +29,7 @@ async def post_institution(
     """
     Create a new Institution
     """
-
+    
     if existing_institution:
         raise HTTPException(
             409, detail="There is already an institution with this credentials"

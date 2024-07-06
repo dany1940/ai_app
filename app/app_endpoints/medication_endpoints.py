@@ -14,7 +14,7 @@ router = APIRouter(
 @router.post(
     "/{medication_name}", status_code=status.HTTP_201_CREATED, response_model=None
 )
-def post_medication(
+async def post_medication(
     medication: app.schemas.MedicationCreate,
     medication_name: str,
     form: str,
@@ -37,4 +37,4 @@ def post_medication(
         **medication.model_dump(exclude={"medication_name"}),
     )
     database.add(new_medication)
-    database.commit()
+    await database.commit()

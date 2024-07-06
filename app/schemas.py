@@ -556,7 +556,7 @@ class PatientCreate(BaseModel):
     is_from_emergency_services: bool | None = None
     is_from_abroad: bool | None = None
     is_from_nhs: bool | None = None
-    emergency_contact_number: bool | None = None
+    emergency_contact_number: str | None = None
     is_donor: bool | None = None
     donor_organ: str | None = None
     is_blood_donor: bool | None = None
@@ -571,8 +571,6 @@ class PatientCreate(BaseModel):
 class Image(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     link: str
-    created_on: datetime
-    clinician_id: int
 
 
 class ImageCreate(Image):

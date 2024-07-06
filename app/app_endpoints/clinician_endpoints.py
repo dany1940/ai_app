@@ -49,8 +49,8 @@ async def post_clinician(
     new_clinician = models.Clinician(
         institution_id=institution_id,
         clinician_code=clinician_code,
-        created_on=datetime.now(timezone.utc),
-        updated_on=datetime.now(timezone.utc),
+        created_on=datetime.now(),
+        updated_on=datetime.now(),
         **fields.model_dump(exclude={"institution_name"}),
     )
 

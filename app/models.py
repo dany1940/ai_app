@@ -155,6 +155,7 @@ class Image(Base):
     __tablename__ = "image_tab"
 
     image_id = mapped_column(Integer, Identity(always=True), primary_key=True)
+    image_code = mapped_column(String, nullable=True, unique=True)
     link = Column(String, nullable=False)
     created_on = Column(DateTime(timezone=False), nullable=False)
     medication = relationship("Medication", back_populates="image")

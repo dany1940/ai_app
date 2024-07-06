@@ -144,16 +144,9 @@ async def get_institution(
         await database.scalars(
             select(models.Institution)
             .where(models.Institution.name == institution_name)
-            .where(
-                Institution.organization_id.in_(
-                    select(models.Organization.id).where(
-                        models.Organization.path.descendant_of(user.organization.path)
-                    )
-                )
             )
-        )
-    ).first()
-    return institution
+        ).first()
+    return  institution
 
 async def get_clinician(
     database: Database,
@@ -170,8 +163,8 @@ async def get_clinician(
                     models.Clinician.clinician_code == clinician_code,
                 )
             )
-        ).first()
-    )
+        )
+    ).first()
 
     return clinician
 
@@ -191,8 +184,8 @@ async def get_patient_by_code(
                     models.Patient.patient_code == patient_code,
                 )
             )
-        ).first()
-    )
+        )
+    ).first()
     return patient
 
 async def get_medication(
@@ -210,8 +203,8 @@ async def get_medication(
                     models.Medication.code_name == medication_code,
                 )
             )
-        ).first()
-    )
+        )
+    ).first()
     return medication
 
 async def get_prescription(
@@ -227,8 +220,8 @@ async def get_prescription(
             select(models.Prescription.prescription_code).where(
                 models.Prescription.prescription_code == prescription_code
             )
-        ).first()
-    )
+        )
+    ).first()
     return prescription
 
 async def get_apointment(
@@ -247,15 +240,8 @@ async def get_apointment(
                 models.Institution.id == models.Apointments.institution_refrence,
             )
             .where(models.Apointments.apointment_code == apointment_code)
-            .where(
-                models.Institution.organization_id.in_(
-                    select(models.Organization.id).where(
-                        models.Organization.path.descendant_of(user.organization.path)
-                    )
-                )
-            )
-        ).first()
-    )
+        )
+    ).first()
     return apointment
 
 
@@ -281,13 +267,28 @@ async def get_clinical_trial(
                     )
                 )
             )
-        ).first()
-    )
+        )
+    ).first()
     return clinical_trial
 
+async def get_image(
+    database: Database,
+    image_code: str,
+    user: CurrentUser,
+) -> models.Image | None:
+    """
+    Get a  prescription from database
+    """
+    image = (
+        await database.scalars(
+            select(models.Image)
+            .where(models.Image.image_code == image_code)
+        )
+    ).first()
+    return image
 
 
-Clinical_Trial = Annotated[models.ClinicalTrials, Depends(get_clinical_trial)]
+Clinical_Trials = Annotated[models.ClinicalTrials, Depends(get_clinical_trial)]
 Apointment = Annotated[models.Apointments, Depends(get_apointment)]
 Prescription = Annotated[models.Prescription, Depends(get_prescription)]
 Clinician = Annotated[models.Clinician, Depends(get_clinician)]
@@ -296,5 +297,7 @@ Medication = Annotated[models.Medication, Depends(get_medication)]
 CurrentSuperUser = Annotated[models.User, Depends(get_current_super_user)]
 Institution = Annotated[models.Institution, Depends(get_institution)]
 CurrentAdminUser = Annotated[models.User, Depends(get_current_admin_user)]
+Image = Annotated[models.Image, Depends(get_image)]
+
 
 

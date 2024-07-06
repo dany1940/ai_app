@@ -64,8 +64,8 @@ async def post_patient(
         institution_id=institution_id,
         patient_code=patient_code,
         clinician_id=clinician_id,
-        updated_on=datetime.now(timezone.utc),
-        created_on=datetime.now(timezone.utc),
+        updated_on=datetime.now(),
+        created_on=datetime.now(),
         **fields.model_dump(
             exclude={"institution_name", "clinician_code", "patient_code"}
         ),

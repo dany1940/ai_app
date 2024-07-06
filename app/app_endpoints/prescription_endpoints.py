@@ -20,7 +20,7 @@ router = APIRouter(
 @router.post(
     "/{prescription_id}", status_code=status.HTTP_201_CREATED, response_model=None
 )
-def post_prescription(
+async def post_prescription(
     fields: app.schemas.PrescriptionCreate,
     prescription_code: str,
     existing_prescription: Prescription,
@@ -44,12 +44,11 @@ def post_prescription(
     medication_json = {}
 
     for code in medication_code:
-        medication = database.execute(
+        medication = ( await database.scalars(
             select(models.Medication)
             .where(models.Medication.code_name == code)
             .options(load_only(models.Medication.indications, models.Medication.dosage))
-        ).scalar_one_or_none()
-        print(medication)
+        )).first()
         if not medication:
             raise HTTPException(404, detail=f"Medication code not found{code}")
         medication_json[code] = {
@@ -61,14 +60,14 @@ def post_prescription(
         clinician_refrence=clinician.registration_id,
         patient_refrence=patient.registration_id,
         prescription_code=prescription_code,
-        updated_on=datetime.now(timezone.utc),
-        created_on=datetime.now(timezone.utc),
+        updated_on=datetime.now(),
+        created_on=datetime.now(),
         medication_json=medication_json,
         **fields.model_dump(exclude={"patient_name", "clinician_name"}),
     )
 
     database.add(new_prescription)
-    database.commit()
+    await database.commit()
 
 
 @router.get(
@@ -131,7 +130,7 @@ async def get_medication_prescription_for_a_patient(
     if status_ is not None:
         filters.append(models.Prescription.prescription_status == status_)
 
-    return database.execute(
+    return ( await database.execute(
         select(
             models.Prescription.reason,
             models.Prescription.created_on.label("prescription_date"),
@@ -155,13 +154,6 @@ async def get_medication_prescription_for_a_patient(
             models.Prescription.patient_refrence == models.Patient.registration_id,
         )
         .filter(*filters)
+    )
     ).all()
 
-
-@router.patch("/{medication_request_id}", status_code=status.HTTP_200_OK)
-def modify_medication_request(
-    medication_request_update: str,
-    existing_medication_request: str,
-    database: Database,
-):
-    pass

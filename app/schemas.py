@@ -2,7 +2,7 @@ from datetime import date, datetime
 from typing import Dict, List, Literal, Optional
 
 from pydantic import (BaseModel, ConfigDict, EmailStr, Field, PositiveInt,
-                      validator)
+                      field_validator)
 from typing_extensions import Annotated
 
 from app.commons import (BloodGroupType, FormType, GenderType,
@@ -54,7 +54,7 @@ class Patient(Person):
     date_of_birth: date
     gender: object = Literal[GenderType.FEMALE.value]
 
-    @validator("date_of_birth")
+    @field_validator("date_of_birth")
     def is_date_in_range(cls, is_valid):
         if (
             not date(year=1900, month=1, day=1)
@@ -146,17 +146,20 @@ class PatientCreate(BaseModel):
     is_alcohool_drinker: bool | None = None
     institution_name: str
     clinician_code: str
+    image_code: str | None = None
 
 
 class Image(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     link: str
     created_on: datetime
-    clinician_id: int
+
 
 
 class ImageCreate(Image):
-    pass
+    model_config = ConfigDict(from_attributes=True)
+    link: str
+    created_on: datetime
 
 
 class Clinician(Person):
@@ -416,7 +419,6 @@ class UserCreate(BaseModel):
     """
     Properties to receive on user creation.
     """
-
     password: str
     email: EmailStr
     firstname: str | None = None
@@ -497,3 +499,93 @@ class GetPrescription(BaseModel):
     clinician_last_name: str | None = None
     clinician_email: str | None = None
     patient_refrence: int | None = None
+
+
+class PatientCreate(BaseModel):
+    """ "class patien validates birthday"""
+
+    __pydantic_config__ = ConfigDict(use_enum_values=True)
+
+    first_name: Annotated[
+        str,
+        Field(
+            title="Person first name",
+            min_length=2,
+            max_length=25,
+            pattern=r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$",
+            default="MARIA",
+        ),
+    ]
+    last_name: Annotated[
+        str,
+        Field(
+            title="person last name",
+            min_length=2,
+            max_length=25,
+            pattern=r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$",
+            default="DOE",
+        ),
+    ]
+    date_of_birth: Annotated[
+        datetime,
+        Field(
+            title="Date of birth",
+            description="The date of birth of the patient",
+            example="2021-08-31",
+            default_factory=datetime.now,
+        ),
+    ]
+    address: (
+        Annotated[
+            str,
+            Field(
+                title="person address",
+                min_length=2,
+                max_length=25,
+                pattern=r"^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$",
+                default="1234 Main St",
+            ),
+        ]
+        | None
+    ) = None
+
+    gender: object = Literal[GenderType.FEMALE.value]
+    is_smoker: bool | None = None
+    is_active: bool | None = None
+    is_armed_forces: bool | None = None
+    is_from_emergency_services: bool | None = None
+    is_from_abroad: bool | None = None
+    is_from_nhs: bool | None = None
+    emergency_contact_number: str | None = None
+    is_donor: bool | None = None
+    donor_organ: str | None = None
+    is_blood_donor: bool | None = None
+    patient_medical_history: str | None = None
+    blood_type: BloodGroupType = Literal[BloodGroupType.A_POSITIVE.value]
+    title: TitleType | None = None
+    is_alcohool_drinker: bool | None = None
+    institution_name: str
+    clinician_code: str
+
+
+class Image(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    link: str
+
+
+class ImageCreate(Image):
+    pass
+
+
+class Clinician(Person):
+
+    model_config = ConfigDict(from_attributes=True)
+
+    gmc_number: str
+    mc_number: str
+    password: str
+    about: str
+    rating: float
+    online_consultation: bool
+    online_consultation_fee: float
+    online_consultation_duration: int

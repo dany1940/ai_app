@@ -1,38 +1,46 @@
+import logging
+import sys
+from contextlib import asynccontextmanager
+
+from app.app_endpoints import (user_endpoints, auth_endpoints, organisation_endpoints, institution_endpoints, patient_endpoints,
+clinician_endpoints, image_endpoints, prescription_endpoints, apointments, medication_endpoints, clinical_trials_endpoints)
+from app.database import sessionmanager
 from fastapi import FastAPI
-from fastapi_health import health as api_health
 
-from app.app_endpoints.health_endpoints import is_database_online
+logging.basicConfig(stream=sys.stdout)
 
-from .app_endpoints import (apointments_endpoints, auth_endpoints,
-                            clinical_trials_endpoints, clinician_endpoints,
-                            contact_endpoints, health_endpoints,
-                            image_endpoints, institution_endpoints,
-                            medication_enpoints, organisation_endpoints,
-                            patient_endpoints, prescription_endpoints,
-                            user_endpoints)
 
-app = FastAPI(title="Medical Api", docs_url="/docs", version="0.0.1")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Function that handles startup and shutdown events.
+    To understand more, read https://fastapi.tiangolo.com/advanced/events/
+    """
+    yield
+    if sessionmanager._engine is not None:
+        # Close the DB connection
+        await sessionmanager.close()
 
+
+app = FastAPI(lifespan=lifespan, docs_url="/api/docs")
+
+
+
+# Routers
 routers = [
     auth_endpoints.router,
-    clinician_endpoints.router,
-    health_endpoints.router,
-    contact_endpoints.router,
-    image_endpoints.router,
-    medication_enpoints.router,
     organisation_endpoints.router,
+    user_endpoints.router,
     institution_endpoints.router,
     patient_endpoints.router,
-    user_endpoints.router,
+    clinician_endpoints.router,
+    image_endpoints.router,
     prescription_endpoints.router,
-    apointments_endpoints.router,
+    apointments.router,
+    medication_endpoints.router,
     clinical_trials_endpoints.router,
+
 ]
 for router in routers:
     app.include_router(router)
 
-
-app.add_api_route(
-    "/health",
-    api_health([is_database_online]),
-)

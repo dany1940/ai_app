@@ -2,13 +2,31 @@ version: "3"
 
 services:
   db:
-    image: postgres:11
-    ports:
-      - "5432:5432"
+    image: postgres:15-alpine
+    restart: always
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - 5432:5432
+    expose:
+      - "5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data:cached
+  test-db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: test-user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: test_postgres
+    ports:
+      - 5434:5432 # Use a different port to avoid conflicts with the main database
+    expose:
+      - "5434" # Exposing the different port for clarity
+    volumes:
+      - test-db-data:/var/lib/postgresql/data:cached
   web:
     build: .
     command: bash -c "alembic revision --autogenerate -m "First-revision" && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
@@ -18,6 +36,18 @@ services:
       - "8000:8000"
     depends_on:
       - db
+      - test-db
+  frontend:
+    build: .
+    stdin_open: true
+    volumes:
+      - "./frontend:/app:cached"
+      - "./frontend/node_modules:/app/node_modules:cached"
+    environment:
+      - NODE_ENV=development
+    ports:
+      - 3000:3000
+
   pgadmin:
     container_name: pgadmin
     image: dpage/pgadmin4
@@ -28,3 +58,8 @@ services:
       - "5050:80"
     depends_on:
       - db
+
+volumes:
+  db-data:
+  test-db-data:
+

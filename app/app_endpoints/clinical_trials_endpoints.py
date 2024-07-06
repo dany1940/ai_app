@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, status
 
 import app.schemas
 from app import models
-from app.dependencies import (Apointment, ClinicalTrial, Clinician, Database,
+from app.dependencies import (Apointment, Clinical_Trials, Clinician, Database,
                               Institution, Patient)
 
 router = APIRouter(
@@ -17,10 +17,10 @@ router = APIRouter(
 @router.post(
     "/{clinical_trial_code}", status_code=status.HTTP_201_CREATED, response_model=None
 )
-def post_clinical_trials(
+async def post_clinical_trials(
     fields: app.schemas.ClinicalTrialCreate,
     clinical_trial_code: str,
-    existing_clinical_trial: ClinicalTrial,
+    existing_clinical_trial: Clinical_Trials,
     clinician_code: Clinician,
     patient_code: Patient,
     institution_name: Institution,
@@ -43,10 +43,10 @@ def post_clinical_trials(
         clinician_refrence=clinician_code.registration_id,
         patient_refrence=patient_code.registration_id,
         institution_refrence=institution_name.id,
-        updated_on=datetime.now(timezone.utc),
-        created_on=datetime.now(timezone.utc),
+        updated_on=datetime.now(),
+        created_on=datetime.now(),
         **fields.model_dump(),
     )
 
     database.add(new_clinical_trial)
-    database.commit()
+    await database.commit()
